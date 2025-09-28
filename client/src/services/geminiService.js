@@ -13,11 +13,52 @@ const genAI = new GoogleGenerativeAI(API_KEY);
 // Initialize the model
 const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
+// Track recently used questions to avoid immediate repeats
+const recentQuestionCache = new Map();
+const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
+
+// Clean old entries from cache
+const cleanCache = () => {
+  const now = Date.now();
+  for (const [key, timestamp] of recentQuestionCache.entries()) {
+    if (now - timestamp > CACHE_DURATION) {
+      recentQuestionCache.delete(key);
+    }
+  }
+};
+
+// Generate a cache key based on resume content
+const getCacheKey = (resumeData) => {
+  if (!resumeData) return "default";
+  const keyData = {
+    name: resumeData.name || "",
+    skills: resumeData.skills || "",
+    technologies: resumeData.technologies || "",
+    resumeText: resumeData.resumeText
+      ? resumeData.resumeText.substring(0, 200)
+      : "",
+  };
+  return btoa(JSON.stringify(keyData));
+};
+
 /**
  * Generate interview questions using Gemini AI based on resume content
  */
 export const generateInterviewQuestions = async (resumeData = null) => {
   try {
+    // Clean old cache entries
+    cleanCache();
+
+    // Generate cache key and check for recent questions
+    const cacheKey = getCacheKey(resumeData);
+    const recentQuestions = JSON.parse(
+      localStorage.getItem(`recent_questions_${cacheKey}`) || "[]"
+    );
+
+    // Add randomization seed to ensure different questions each time
+    const randomSeed = Math.floor(Math.random() * 10000);
+    const timestamp = Date.now();
+
     // Extract key information from resume if available
     const resumeContext = resumeData
       ? `
@@ -34,17 +75,31 @@ export const generateInterviewQuestions = async (resumeData = null) => {
     `
       : "";
 
-    const prompt = `Generate 6 personalized multiple choice questions for an interview based on the candidate's background:
+    // Add previously asked questions to avoid repeats
+    const avoidQuestionsPrompt =
+      recentQuestions.length > 0
+        ? `\n    IMPORTANT: Avoid generating similar questions to these recently asked ones:\n    ${recentQuestions
+            .map((q) => `- ${q.question}`)
+            .join("\n    ")}\n    `
+        : "";
+
+    const prompt = `Generate 6 UNIQUE and VARIED multiple choice questions for an interview based on the candidate's background:
     ${resumeContext}
     
+    IMPORTANT: Create DIFFERENT questions each time this is called. Use various aspects of their skills and experience.
+    Random Seed: ${randomSeed} (use this to ensure variety)
+    Timestamp: ${timestamp}
+    ${avoidQuestionsPrompt}
+    
     Create questions that are specifically relevant to the candidate's experience and skills mentioned in their resume.
+    Focus on different aspects like: problem-solving, best practices, optimization, debugging, architecture, security, testing, etc.
     
     Requirements:
     - 2 Easy questions (20 seconds each) - Basic concepts related to their experience
     - 2 Medium questions (60 seconds each) - Intermediate topics from their skillset  
     - 2 Hard questions (120 seconds each) - Advanced problems in their domain
     
-    If no resume data is provided, default to full-stack React/Node.js questions.
+    If no resume data is provided, default to full-stack React/Node.js questions but still vary the questions.
     
     Format as JSON array with this structure:
     [
@@ -68,7 +123,7 @@ export const generateInterviewQuestions = async (resumeData = null) => {
     // Try to parse the JSON response
     try {
       const questions = JSON.parse(text.replace(/```json\n?|\n?```/g, ""));
-      return questions.map((q, index) => ({
+      const processedQuestions = questions.map((q, index) => ({
         id: `q_${Date.now()}_${index}`,
         question: q.question,
         difficulty: q.difficulty,
@@ -83,9 +138,29 @@ export const generateInterviewQuestions = async (resumeData = null) => {
         aiScore: null,
         feedback: "",
       }));
+
+      // Store questions in recent cache to avoid repeats
+      try {
+        const questionsToStore = processedQuestions.map((q) => ({
+          question: q.question,
+          category: q.category,
+        }));
+        const updatedRecentQuestions = [
+          ...questionsToStore,
+          ...recentQuestions,
+        ].slice(0, 20); // Keep last 20
+        localStorage.setItem(
+          `recent_questions_${cacheKey}`,
+          JSON.stringify(updatedRecentQuestions)
+        );
+      } catch (storageError) {
+        console.log("Could not store questions in cache:", storageError);
+      }
+
+      return processedQuestions;
     } catch {
       console.error("Failed to parse AI response as JSON:", text);
-      // Generate personalized fallback questions based on resume if available
+      // Generate personalized fallback questions
       return getPersonalizedFallbackQuestions(resumeData);
     }
   } catch (error) {
@@ -223,8 +298,21 @@ Base the assessment on technical accuracy, problem-solving approach, and communi
   }
 };
 
-// Personalized fallback questions based on resume data
+// Personalized fallback questions based on resume data with randomization
 const getPersonalizedFallbackQuestions = (resumeData) => {
+  // Add randomization to ensure different questions each time
+  const randomSeed = Math.floor(Math.random() * 10000);
+  const timestamp = Date.now();
+
+  // Get recent questions to avoid repeats
+  const cacheKey = getCacheKey(resumeData);
+  const recentQuestions = JSON.parse(
+    localStorage.getItem(`recent_questions_${cacheKey}`) || "[]"
+  );
+  const recentQuestionTexts = recentQuestions.map((q) =>
+    q.question.toLowerCase()
+  );
+
   // Analyze resume for key technologies
   const resumeText = resumeData?.resumeText?.toLowerCase() || "";
   const skills = resumeData?.skills?.toLowerCase() || "";
@@ -254,12 +342,13 @@ const getPersonalizedFallbackQuestions = (resumeData) => {
     allText.includes("javascript") || allText.includes("js");
 
   let questions = [];
+  const questionPools = {};
 
   // Generate React-specific questions if React is mentioned
   if (hasReact) {
-    questions.push(
+    questionPools.react = [
       {
-        id: "q_react_1",
+        id: `q_react_1_${randomSeed}`,
         question: "What is the purpose of React's useEffect hook?",
         difficulty: "Easy",
         time: 20,
@@ -272,15 +361,26 @@ const getPersonalizedFallbackQuestions = (resumeData) => {
         correctAnswer: 1,
         explanation:
           "useEffect is used to perform side effects like data fetching, subscriptions, or DOM manipulation in functional components.",
-        category: "React",
-        selectedAnswer: null,
-        answer: "",
-        score: 0,
-        aiScore: null,
-        feedback: "",
+        category: "React Hooks",
       },
       {
-        id: "q_react_2",
+        id: `q_react_2_${randomSeed}`,
+        question: "What is the difference between useState and useReducer?",
+        difficulty: "Easy",
+        time: 20,
+        options: [
+          "useState is for objects, useReducer is for primitives",
+          "useReducer is for complex state logic, useState is for simple state",
+          "They are exactly the same",
+          "useReducer is deprecated",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "useReducer is preferred for complex state logic with multiple sub-values or when next state depends on previous one.",
+        category: "React State Management",
+      },
+      {
+        id: `q_react_3_${randomSeed}`,
         question: "How do you optimize React app performance for large lists?",
         difficulty: "Medium",
         time: 60,
@@ -294,20 +394,70 @@ const getPersonalizedFallbackQuestions = (resumeData) => {
         explanation:
           "Virtual scrolling and React.memo help optimize performance by reducing unnecessary re-renders and DOM manipulations.",
         category: "React Performance",
-        selectedAnswer: null,
-        answer: "",
-        score: 0,
-        aiScore: null,
-        feedback: "",
-      }
-    );
+      },
+      {
+        id: `q_react_4_${randomSeed}`,
+        question: "What is the purpose of React's key prop in lists?",
+        difficulty: "Medium",
+        time: 60,
+        options: [
+          "To style list items",
+          "To help React identify which items have changed",
+          "To sort the list",
+          "To make lists accessible",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "Keys help React identify which items have changed, are added, or removed, making list updates more efficient.",
+        category: "React Lists",
+      },
+      {
+        id: `q_react_5_${randomSeed}`,
+        question:
+          "How would you implement code splitting in a React application?",
+        difficulty: "Hard",
+        time: 120,
+        options: [
+          "Using React.lazy() and Suspense",
+          "Splitting code manually with multiple script tags",
+          "Using only external libraries",
+          "Code splitting is not possible in React",
+        ],
+        correctAnswer: 0,
+        explanation:
+          "React.lazy() allows you to define a component that is loaded dynamically, and Suspense lets you show fallback content.",
+        category: "React Advanced",
+      },
+      {
+        id: `q_react_6_${randomSeed}`,
+        question: "What are the benefits of using React Server Components?",
+        difficulty: "Hard",
+        time: 120,
+        options: [
+          "They only work on the client side",
+          "They reduce bundle size and improve performance by rendering on the server",
+          "They are the same as regular components",
+          "They only work with class components",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "Server Components render on the server, reducing bundle size and improving initial page load performance.",
+        category: "React Server Components",
+      },
+    ];
+
+    // Randomly select 2 questions from React pool
+    const reactQuestions = questionPools.react
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 2);
+    questions.push(...reactQuestions);
   }
 
   // Generate Node.js questions if Node is mentioned
   if (hasNode) {
-    questions.push(
+    questionPools.node = [
       {
-        id: "q_node_1",
+        id: `q_node_1_${randomSeed}`,
         question: "What is middleware in Express.js?",
         difficulty: "Easy",
         time: 20,
@@ -320,15 +470,26 @@ const getPersonalizedFallbackQuestions = (resumeData) => {
         correctAnswer: 1,
         explanation:
           "Middleware functions execute during the request-response cycle and can modify request/response objects.",
-        category: "Node.js/Express",
-        selectedAnswer: null,
-        answer: "",
-        score: 0,
-        aiScore: null,
-        feedback: "",
+        category: "Express Middleware",
       },
       {
-        id: "q_node_2",
+        id: `q_node_2_${randomSeed}`,
+        question: "What is the Event Loop in Node.js?",
+        difficulty: "Easy",
+        time: 20,
+        options: [
+          "A database connection pool",
+          "The mechanism that handles asynchronous operations",
+          "A frontend rendering engine",
+          "A package manager",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "The Event Loop is Node.js's mechanism for handling asynchronous operations without blocking the main thread.",
+        category: "Node.js Core",
+      },
+      {
+        id: `q_node_3_${randomSeed}`,
         question: "How do you handle asynchronous operations in Node.js?",
         difficulty: "Medium",
         time: 60,
@@ -342,125 +503,226 @@ const getPersonalizedFallbackQuestions = (resumeData) => {
         explanation:
           "Node.js handles async operations using callbacks, promises, and async/await patterns for non-blocking I/O.",
         category: "Node.js Async",
-        selectedAnswer: null,
-        answer: "",
-        score: 0,
-        aiScore: null,
-        feedback: "",
-      }
+      },
+      {
+        id: `q_node_4_${randomSeed}`,
+        question:
+          "What is the difference between process.nextTick() and setImmediate()?",
+        difficulty: "Medium",
+        time: 60,
+        options: [
+          "They are exactly the same",
+          "nextTick() executes before I/O events, setImmediate() executes after",
+          "setImmediate() is faster",
+          "nextTick() only works on Linux",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "process.nextTick() callbacks are executed before I/O events, while setImmediate() callbacks are executed after I/O events.",
+        category: "Node.js Event Loop",
+      },
+      {
+        id: `q_node_5_${randomSeed}`,
+        question:
+          "How would you implement clustering in Node.js for scalability?",
+        difficulty: "Hard",
+        time: 120,
+        options: [
+          "Use only single-threaded approach",
+          "Use the cluster module to spawn multiple worker processes",
+          "Use only external load balancers",
+          "Clustering is not possible in Node.js",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "The cluster module allows you to create child processes that share the same server port, utilizing multi-core systems.",
+        category: "Node.js Scaling",
+      },
+      {
+        id: `q_node_6_${randomSeed}`,
+        question: "What are streams in Node.js and when would you use them?",
+        difficulty: "Hard",
+        time: 120,
+        options: [
+          "Streams are only for video processing",
+          "Objects for handling flowing data efficiently, useful for large files",
+          "Streams are deprecated in modern Node.js",
+          "Streams only work with databases",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "Streams are objects for handling flowing data efficiently, especially useful for processing large files without loading everything into memory.",
+        category: "Node.js Streams",
+      },
+    ];
+
+    // Randomly select 2 questions from Node pool
+    const nodeQuestions = questionPools.node
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 2);
+    questions.push(...nodeQuestions);
+  }
+
+  // Add other technology questions to pools
+  if (hasPython) {
+    questionPools.python = [
+      {
+        id: `q_python_1_${randomSeed}`,
+        question: "What is the difference between a list and tuple in Python?",
+        difficulty: "Easy",
+        time: 20,
+        options: [
+          "Lists are immutable, tuples are mutable",
+          "Lists are mutable, tuples are immutable",
+          "There is no difference",
+          "Lists are for numbers, tuples are for strings",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "Lists are mutable (can be changed) while tuples are immutable (cannot be changed after creation).",
+        category: "Python Data Types",
+      },
+      {
+        id: `q_python_2_${randomSeed}`,
+        question: "What is a Python generator?",
+        difficulty: "Medium",
+        time: 60,
+        options: [
+          "A function that returns multiple values at once",
+          "A function that yields values one at a time using memory efficiently",
+          "A tool for generating random numbers",
+          "A Python compilation tool",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "Generators yield values one at a time and maintain state between calls, making them memory efficient for large datasets.",
+        category: "Python Advanced",
+      },
+    ];
+  }
+
+  if (hasDatabase) {
+    questionPools.database = [
+      {
+        id: `q_db_1_${randomSeed}`,
+        question: "What is the difference between SQL and NoSQL databases?",
+        difficulty: "Medium",
+        time: 60,
+        options: [
+          "SQL is newer than NoSQL",
+          "SQL uses structured data with schemas, NoSQL is more flexible",
+          "NoSQL is always faster than SQL",
+          "SQL is only for small applications",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "SQL databases use structured data with predefined schemas, while NoSQL databases offer more flexibility in data structure.",
+        category: "Database Types",
+      },
+      {
+        id: `q_db_2_${randomSeed}`,
+        question: "What is database normalization?",
+        difficulty: "Medium",
+        time: 60,
+        options: [
+          "Making database faster",
+          "Organizing data to reduce redundancy and dependency",
+          "Adding more tables to database",
+          "Encrypting database data",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "Database normalization is the process of organizing data to minimize redundancy and dependency.",
+        category: "Database Design",
+      },
+    ];
+  }
+
+  if (hasJavaScript) {
+    questionPools.javascript = [
+      {
+        id: `q_js_1_${randomSeed}`,
+        question:
+          "What is the difference between '==' and '===' in JavaScript?",
+        difficulty: "Easy",
+        time: 20,
+        options: [
+          "No difference, they're the same",
+          "'==' compares values, '===' compares values and types",
+          "'===' is deprecated",
+          "'==' is faster than '==='",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "'==' performs type coercion before comparison, while '===' compares both value and type without coercion.",
+        category: "JavaScript Basics",
+      },
+      {
+        id: `q_js_2_${randomSeed}`,
+        question: "What is closure in JavaScript?",
+        difficulty: "Hard",
+        time: 120,
+        options: [
+          "A way to close the browser",
+          "A function with access to variables in its outer scope",
+          "A method to end JavaScript execution",
+          "A type of loop in JavaScript",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "A closure gives you access to an outer function's scope from an inner function, even after the outer function returns.",
+        category: "JavaScript Advanced",
+      },
+    ];
+  }
+
+  // Collect all available questions from pools
+  const allPoolQuestions = Object.values(questionPools).flat();
+
+  // Filter out questions that were recently asked
+  const filteredQuestions = allPoolQuestions.filter(
+    (q) =>
+      !recentQuestionTexts.some((recent) =>
+        recent.toLowerCase().includes(q.question.toLowerCase().substring(0, 30))
+      )
+  );
+
+  // If we have filtered questions, use them; otherwise use all pool questions
+  const availableQuestions =
+    filteredQuestions.length > 0 ? filteredQuestions : allPoolQuestions;
+
+  // If we have pool questions, use them; otherwise use general fallback
+  if (availableQuestions.length > 0) {
+    // Shuffle and select questions
+    const shuffledQuestions = availableQuestions.sort(
+      () => Math.random() - 0.5
+    );
+    questions = shuffledQuestions.slice(0, 6);
+  }
+
+  // Fill remaining slots with randomized general questions if needed
+  if (questions.length < 6) {
+    const generalQuestions = getRandomizedFallbackQuestions(randomSeed);
+    // Filter general questions to avoid recent ones too
+    const filteredGeneral = generalQuestions.filter(
+      (q) =>
+        !recentQuestionTexts.some((recent) =>
+          recent
+            .toLowerCase()
+            .includes(q.question.toLowerCase().substring(0, 30))
+        )
+    );
+    const remainingNeeded = 6 - questions.length;
+    questions.push(
+      ...(filteredGeneral.length > 0
+        ? filteredGeneral
+        : generalQuestions
+      ).slice(0, remainingNeeded)
     );
   }
 
-  // Generate Python questions if Python is mentioned
-  if (hasPython) {
-    questions.push({
-      id: "q_python_1",
-      question: "What is the difference between a list and tuple in Python?",
-      difficulty: "Easy",
-      time: 20,
-      options: [
-        "Lists are immutable, tuples are mutable",
-        "Lists are mutable, tuples are immutable",
-        "There is no difference",
-        "Lists are for numbers, tuples are for strings",
-      ],
-      correctAnswer: 1,
-      explanation:
-        "Lists are mutable (can be changed) while tuples are immutable (cannot be changed after creation).",
-      category: "Python",
-      selectedAnswer: null,
-      answer: "",
-      score: 0,
-      aiScore: null,
-      feedback: "",
-    });
-  }
-
-  // Generate Database questions if database skills are mentioned
-  if (hasDatabase) {
-    questions.push({
-      id: "q_db_1",
-      question: "What is the difference between SQL and NoSQL databases?",
-      difficulty: "Medium",
-      time: 60,
-      options: [
-        "SQL is newer than NoSQL",
-        "SQL uses structured data with schemas, NoSQL is more flexible",
-        "NoSQL is always faster than SQL",
-        "SQL is only for small applications",
-      ],
-      correctAnswer: 1,
-      explanation:
-        "SQL databases use structured data with predefined schemas, while NoSQL databases offer more flexibility in data structure.",
-      category: "Database",
-      selectedAnswer: null,
-      answer: "",
-      score: 0,
-      aiScore: null,
-      feedback: "",
-    });
-  }
-
-  // Generate DevOps questions if DevOps skills are mentioned
-  if (hasDevOps) {
-    questions.push({
-      id: "q_devops_1",
-      question: "What is the main benefit of containerization with Docker?",
-      difficulty: "Hard",
-      time: 120,
-      options: [
-        "It makes applications run faster",
-        "It provides consistency across different environments",
-        "It eliminates the need for testing",
-        "It automatically scales applications",
-      ],
-      correctAnswer: 1,
-      explanation:
-        "Docker provides consistency by packaging applications with their dependencies, ensuring they run the same across environments.",
-      category: "DevOps",
-      selectedAnswer: null,
-      answer: "",
-      score: 0,
-      aiScore: null,
-      feedback: "",
-    });
-  }
-
-  // Generate JavaScript questions if JavaScript is mentioned
-  if (hasJavaScript) {
-    questions.push({
-      id: "q_js_1",
-      question: "What is the difference between '==' and '===' in JavaScript?",
-      difficulty: "Easy",
-      time: 20,
-      options: [
-        "No difference, they're the same",
-        "'==' compares values, '===' compares values and types",
-        "'===' is deprecated",
-        "'==' is faster than '==='",
-      ],
-      correctAnswer: 1,
-      explanation:
-        "'==' performs type coercion before comparison, while '===' compares both value and type without coercion.",
-      category: "JavaScript",
-      selectedAnswer: null,
-      answer: "",
-      score: 0,
-      aiScore: null,
-      feedback: "",
-    });
-  }
-
-  // Fill remaining slots with general questions if we don't have 6 yet
-  const generalQuestions = getFallbackQuestions();
-  while (questions.length < 6) {
-    const remainingNeeded = 6 - questions.length;
-    const generalToAdd = generalQuestions.slice(0, remainingNeeded);
-    questions.push(...generalToAdd);
-  }
-
   // Ensure we have exactly 6 questions with proper difficulty distribution
-  return questions.slice(0, 6).map((q, index) => {
+  const finalQuestions = questions.slice(0, 6).map((q, index) => {
     // Adjust difficulty to ensure we have 2 easy, 2 medium, 2 hard
     if (index < 2) {
       q.difficulty = "Easy";
@@ -472,130 +734,237 @@ const getPersonalizedFallbackQuestions = (resumeData) => {
       q.difficulty = "Hard";
       q.time = 120;
     }
-    return q;
+
+    // Add required fields for the interview system
+    return {
+      ...q,
+      selectedAnswer: null,
+      answer: "",
+      score: 0,
+      aiScore: null,
+      feedback: "",
+    };
   });
+
+  // Store questions in recent cache to avoid future repeats
+  try {
+    const questionsToStore = finalQuestions.map((q) => ({
+      question: q.question,
+      category: q.category,
+    }));
+    const updatedRecentQuestions = [
+      ...questionsToStore,
+      ...recentQuestions,
+    ].slice(0, 20); // Keep last 20
+    localStorage.setItem(
+      `recent_questions_${cacheKey}`,
+      JSON.stringify(updatedRecentQuestions)
+    );
+  } catch (storageError) {
+    console.log("Could not store questions in cache:", storageError);
+  }
+
+  return finalQuestions;
 };
 
-// Fallback questions if AI fails
-const getFallbackQuestions = () => [
-  {
-    id: "q_fallback_1",
-    question: "What is the main difference between React state and props?",
-    difficulty: "Easy",
-    time: 20,
-    options: [
-      "State is immutable, props are mutable",
-      "State is external data, props are internal data",
-      "State is internal and mutable, props are external and immutable",
-      "There is no difference between state and props",
-    ],
-    correctAnswer: 2,
-    explanation:
-      "State is internal component data that can change, while props are external data passed from parent components and should not be modified.",
-    selectedAnswer: null,
-    answer: "",
-    score: 0,
-    aiScore: null,
-    feedback: "",
-  },
-  {
-    id: "q_fallback_2",
-    question: "What is the Node.js event loop responsible for?",
-    difficulty: "Easy",
-    time: 20,
-    options: [
-      "Handling synchronous operations only",
-      "Managing memory allocation",
-      "Handling asynchronous operations and callbacks",
-      "Compiling JavaScript code",
-    ],
-    correctAnswer: 2,
-    explanation:
-      "The event loop is responsible for handling asynchronous operations, callbacks, and non-blocking I/O in Node.js.",
-    selectedAnswer: null,
-    answer: "",
-    score: 0,
-    aiScore: null,
-    feedback: "",
-  },
-  {
-    id: "q_fallback_3",
-    question: "How do you handle errors in Express.js middleware?",
-    difficulty: "Medium",
-    time: 60,
-    options: [
-      "Use try-catch blocks only",
-      "Pass errors to next() function",
-      "Handle errors in each route individually",
-      "Use global error handlers only",
-    ],
-    correctAnswer: 1,
-    explanation:
-      "In Express.js, errors should be passed to the next() function, which will trigger error-handling middleware.",
-    selectedAnswer: null,
-    answer: "",
-    score: 0,
-    aiScore: null,
-    feedback: "",
-  },
-  {
-    id: "q_fallback_4",
-    question: "Which React hook is best for expensive calculations?",
-    difficulty: "Medium",
-    time: 60,
-    options: ["useState", "useEffect", "useMemo", "useCallback"],
-    correctAnswer: 2,
-    explanation:
-      "useMemo is designed to memoize expensive calculations and only recalculate when dependencies change.",
-    selectedAnswer: null,
-    answer: "",
-    score: 0,
-    aiScore: null,
-    feedback: "",
-  },
-  {
-    id: "q_fallback_5",
-    question:
-      "What is the best approach for scaling Node.js applications horizontally?",
-    difficulty: "Hard",
-    time: 120,
-    options: [
-      "Increase server memory only",
-      "Use clustering and load balancing",
-      "Optimize database queries only",
-      "Use synchronous operations",
-    ],
-    correctAnswer: 1,
-    explanation:
-      "Horizontal scaling is achieved through clustering (multiple Node.js processes) and load balancing across multiple servers.",
-    selectedAnswer: null,
-    answer: "",
-    score: 0,
-    aiScore: null,
-    feedback: "",
-  },
-  {
-    id: "q_fallback_6",
-    question:
-      "Which pattern is most suitable for managing complex React application state?",
-    difficulty: "Hard",
-    time: 120,
-    options: [
-      "Component state only",
-      "Context API with reducers",
-      "Global variables",
-      "Local storage only",
-    ],
-    correctAnswer: 1,
-    explanation:
-      "Context API with useReducer provides a robust pattern for managing complex state across React applications.",
-    selectedAnswer: null,
-    answer: "",
-    score: 0,
-    aiScore: null,
-    feedback: "",
-  },
-];
+// Randomized fallback questions with variety
+const getRandomizedFallbackQuestions = (randomSeed = Math.random() * 1000) => {
+  const questionBank = [
+    {
+      id: `q_fallback_1_${randomSeed}`,
+      question: "What is the main difference between React state and props?",
+      difficulty: "Easy",
+      time: 20,
+      options: [
+        "State is immutable, props are mutable",
+        "State is external data, props are internal data",
+        "State is internal and mutable, props are external and immutable",
+        "There is no difference between state and props",
+      ],
+      correctAnswer: 2,
+      explanation:
+        "State is internal component data that can change, while props are external data passed from parent components and should not be modified.",
+      category: "React Basics",
+    },
+    {
+      id: `q_fallback_2_${randomSeed}`,
+      question: "What is the Node.js event loop responsible for?",
+      difficulty: "Easy",
+      time: 20,
+      options: [
+        "Handling synchronous operations only",
+        "Managing memory allocation",
+        "Handling asynchronous operations and callbacks",
+        "Compiling JavaScript code",
+      ],
+      correctAnswer: 2,
+      explanation:
+        "The event loop is responsible for handling asynchronous operations, callbacks, and non-blocking I/O in Node.js.",
+      category: "Node.js Fundamentals",
+    },
+    {
+      id: `q_fallback_3_${randomSeed}`,
+      question: "How do you handle errors in Express.js middleware?",
+      difficulty: "Medium",
+      time: 60,
+      options: [
+        "Use try-catch blocks only",
+        "Pass errors to next() function",
+        "Handle errors in each route individually",
+        "Use global error handlers only",
+      ],
+      correctAnswer: 1,
+      explanation:
+        "In Express.js, errors should be passed to the next() function, which will trigger error-handling middleware.",
+      category: "Express.js",
+    },
+    {
+      id: `q_fallback_4_${randomSeed}`,
+      question: "Which React hook is best for expensive calculations?",
+      difficulty: "Medium",
+      time: 60,
+      options: ["useState", "useEffect", "useMemo", "useCallback"],
+      correctAnswer: 2,
+      explanation:
+        "useMemo is designed to memoize expensive calculations and only recalculate when dependencies change.",
+      category: "React Optimization",
+    },
+    {
+      id: `q_fallback_5_${randomSeed}`,
+      question:
+        "What is the best approach for scaling Node.js applications horizontally?",
+      difficulty: "Hard",
+      time: 120,
+      options: [
+        "Increase server memory only",
+        "Use clustering and load balancing",
+        "Optimize database queries only",
+        "Use synchronous operations",
+      ],
+      correctAnswer: 1,
+      explanation:
+        "Horizontal scaling is achieved through clustering (multiple Node.js processes) and load balancing across multiple servers.",
+      category: "Node.js Scaling",
+    },
+    {
+      id: `q_fallback_6_${randomSeed}`,
+      question:
+        "Which pattern is most suitable for managing complex React application state?",
+      difficulty: "Hard",
+      time: 120,
+      options: [
+        "Component state only",
+        "Context API with reducers",
+        "Global variables",
+        "Local storage only",
+      ],
+      correctAnswer: 1,
+      explanation:
+        "Context API with useReducer provides a robust pattern for managing complex state across React applications.",
+      category: "React State Management",
+    },
+    {
+      id: `q_fallback_7_${randomSeed}`,
+      question: "What is the purpose of webpack in modern web development?",
+      difficulty: "Medium",
+      time: 60,
+      options: [
+        "To create web pages",
+        "To bundle and optimize web assets",
+        "To host websites",
+        "To write CSS",
+      ],
+      correctAnswer: 1,
+      explanation:
+        "Webpack is a module bundler that bundles JavaScript files and other assets for use in a browser.",
+      category: "Build Tools",
+    },
+    {
+      id: `q_fallback_8_${randomSeed}`,
+      question: "What is REST API?",
+      difficulty: "Easy",
+      time: 20,
+      options: [
+        "A database management system",
+        "An architectural style for web services",
+        "A programming language",
+        "A testing framework",
+      ],
+      correctAnswer: 1,
+      explanation:
+        "REST (Representational State Transfer) is an architectural style for designing web services.",
+      category: "Web APIs",
+    },
+    {
+      id: `q_fallback_9_${randomSeed}`,
+      question: "What is the difference between HTTP and HTTPS?",
+      difficulty: "Easy",
+      time: 20,
+      options: [
+        "HTTPS is faster",
+        "HTTPS is encrypted, HTTP is not",
+        "HTTP is newer",
+        "There's no difference",
+      ],
+      correctAnswer: 1,
+      explanation:
+        "HTTPS is the secure version of HTTP, using SSL/TLS encryption to protect data in transit.",
+      category: "Web Security",
+    },
+    {
+      id: `q_fallback_10_${randomSeed}`,
+      question: "What is Git and why is it important?",
+      difficulty: "Easy",
+      time: 20,
+      options: [
+        "A programming language",
+        "A version control system for tracking changes",
+        "A web browser",
+        "A database",
+      ],
+      correctAnswer: 1,
+      explanation:
+        "Git is a distributed version control system that tracks changes in source code during software development.",
+      category: "Version Control",
+    },
+    {
+      id: `q_fallback_11_${randomSeed}`,
+      question:
+        "What is the difference between var, let, and const in JavaScript?",
+      difficulty: "Medium",
+      time: 60,
+      options: [
+        "They are all exactly the same",
+        "var is function-scoped, let and const are block-scoped",
+        "const is the fastest",
+        "let is deprecated",
+      ],
+      correctAnswer: 1,
+      explanation:
+        "var has function scope, while let and const have block scope. const also prevents reassignment.",
+      category: "JavaScript Fundamentals",
+    },
+    {
+      id: `q_fallback_12_${randomSeed}`,
+      question: "What is the purpose of the package.json file?",
+      difficulty: "Easy",
+      time: 20,
+      options: [
+        "To store user data",
+        "To manage project dependencies and metadata",
+        "To write JavaScript code",
+        "To create web pages",
+      ],
+      correctAnswer: 1,
+      explanation:
+        "package.json contains project metadata, dependencies, scripts, and configuration for Node.js projects.",
+      category: "Node.js Configuration",
+    },
+  ];
+
+  // Shuffle questions and return a randomized subset
+  return questionBank.sort(() => Math.random() - 0.5);
+};
 
 // Fallback summary if AI fails
 const getFallbackSummary = (candidateInfo, totalScore, maxPossibleScore) => {
@@ -642,3 +1011,6 @@ const getFallbackSummary = (candidateInfo, totalScore, maxPossibleScore) => {
     completedAt: new Date().toISOString(),
   };
 };
+
+// Fallback questions if AI fails (keeping for backward compatibility)
+const getFallbackQuestions = () => getRandomizedFallbackQuestions();
