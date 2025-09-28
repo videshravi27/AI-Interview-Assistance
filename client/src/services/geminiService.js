@@ -14,14 +14,37 @@ const genAI = new GoogleGenerativeAI(API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
 /**
- * Generate interview questions using Gemini AI
+ * Generate interview questions using Gemini AI based on resume content
  */
-export const generateInterviewQuestions = async () => {
+export const generateInterviewQuestions = async (resumeData = null) => {
   try {
-    const prompt = `Generate 6 multiple choice questions for a full-stack developer interview (React/Node.js):
-    - 2 Easy questions (20 seconds each) - Basic concepts
-    - 2 Medium questions (60 seconds each) - Intermediate topics  
-    - 2 Hard questions (120 seconds each) - Advanced/design problems
+    // Extract key information from resume if available
+    const resumeContext = resumeData
+      ? `
+    Candidate Resume Information:
+    Name: ${resumeData.name || "N/A"}
+    Skills: ${resumeData.skills || "Full-stack development"}
+    Experience: ${resumeData.experience || "Software development"}
+    Technologies: ${resumeData.technologies || "React, Node.js"}
+    Resume Text: ${
+      resumeData.resumeText
+        ? resumeData.resumeText.substring(0, 1000)
+        : "Full-stack developer background"
+    }
+    `
+      : "";
+
+    const prompt = `Generate 6 personalized multiple choice questions for an interview based on the candidate's background:
+    ${resumeContext}
+    
+    Create questions that are specifically relevant to the candidate's experience and skills mentioned in their resume.
+    
+    Requirements:
+    - 2 Easy questions (20 seconds each) - Basic concepts related to their experience
+    - 2 Medium questions (60 seconds each) - Intermediate topics from their skillset  
+    - 2 Hard questions (120 seconds each) - Advanced problems in their domain
+    
+    If no resume data is provided, default to full-stack React/Node.js questions.
     
     Format as JSON array with this structure:
     [
@@ -31,11 +54,12 @@ export const generateInterviewQuestions = async () => {
         "options": ["Option A", "Option B", "Option C", "Option D"],
         "correctAnswer": 0,
         "explanation": "Brief explanation of why this answer is correct",
-        "time": 20|60|120
+        "time": 20|60|120,
+        "category": "Category based on resume skills"
       }
     ]
     
-    Focus on practical React and Node.js concepts. Ensure correctAnswer is the index (0-3) of the correct option.`;
+    Make questions practical and directly related to the candidate's background. Ensure correctAnswer is the index (0-3) of the correct option. Include a category field that reflects the skill area being tested.`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
@@ -52,6 +76,7 @@ export const generateInterviewQuestions = async () => {
         options: q.options || [],
         correctAnswer: q.correctAnswer || 0,
         explanation: q.explanation || "",
+        category: q.category || "General",
         selectedAnswer: null,
         answer: "",
         score: 0,
@@ -60,13 +85,13 @@ export const generateInterviewQuestions = async () => {
       }));
     } catch {
       console.error("Failed to parse AI response as JSON:", text);
-      // Fallback to hardcoded questions if AI fails
-      return getFallbackQuestions();
+      // Generate personalized fallback questions based on resume if available
+      return getPersonalizedFallbackQuestions(resumeData);
     }
   } catch (error) {
     console.error("Error generating questions with Gemini:", error);
-    // Return fallback questions if API fails
-    return getFallbackQuestions();
+    // Return personalized fallback questions if API fails
+    return getPersonalizedFallbackQuestions(resumeData);
   }
 };
 
@@ -196,6 +221,259 @@ Base the assessment on technical accuracy, problem-solving approach, and communi
     }, 0);
     return getFallbackSummary(candidateInfo, totalScore, maxPossibleScore);
   }
+};
+
+// Personalized fallback questions based on resume data
+const getPersonalizedFallbackQuestions = (resumeData) => {
+  // Analyze resume for key technologies
+  const resumeText = resumeData?.resumeText?.toLowerCase() || "";
+  const skills = resumeData?.skills?.toLowerCase() || "";
+  const technologies = resumeData?.technologies?.toLowerCase() || "";
+  const allText = `${resumeText} ${skills} ${technologies}`;
+
+  // Check for specific technologies
+  const hasReact = allText.includes("react") || allText.includes("reactjs");
+  const hasNode =
+    allText.includes("node") ||
+    allText.includes("nodejs") ||
+    allText.includes("express");
+  const hasPython =
+    allText.includes("python") ||
+    allText.includes("django") ||
+    allText.includes("flask");
+  const hasJava = allText.includes("java") || allText.includes("spring");
+  const hasDatabase =
+    allText.includes("sql") ||
+    allText.includes("database") ||
+    allText.includes("mongodb");
+  const hasDevOps =
+    allText.includes("docker") ||
+    allText.includes("kubernetes") ||
+    allText.includes("aws");
+  const hasJavaScript =
+    allText.includes("javascript") || allText.includes("js");
+
+  let questions = [];
+
+  // Generate React-specific questions if React is mentioned
+  if (hasReact) {
+    questions.push(
+      {
+        id: "q_react_1",
+        question: "What is the purpose of React's useEffect hook?",
+        difficulty: "Easy",
+        time: 20,
+        options: [
+          "To manage component state",
+          "To perform side effects in functional components",
+          "To create reusable components",
+          "To handle user events",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "useEffect is used to perform side effects like data fetching, subscriptions, or DOM manipulation in functional components.",
+        category: "React",
+        selectedAnswer: null,
+        answer: "",
+        score: 0,
+        aiScore: null,
+        feedback: "",
+      },
+      {
+        id: "q_react_2",
+        question: "How do you optimize React app performance for large lists?",
+        difficulty: "Medium",
+        time: 60,
+        options: [
+          "Use inline styles for better performance",
+          "Implement virtual scrolling or use React.memo",
+          "Use class components instead of functional components",
+          "Disable React DevTools",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "Virtual scrolling and React.memo help optimize performance by reducing unnecessary re-renders and DOM manipulations.",
+        category: "React Performance",
+        selectedAnswer: null,
+        answer: "",
+        score: 0,
+        aiScore: null,
+        feedback: "",
+      }
+    );
+  }
+
+  // Generate Node.js questions if Node is mentioned
+  if (hasNode) {
+    questions.push(
+      {
+        id: "q_node_1",
+        question: "What is middleware in Express.js?",
+        difficulty: "Easy",
+        time: 20,
+        options: [
+          "A database connection library",
+          "Functions that execute during request-response cycle",
+          "A frontend framework",
+          "A testing framework",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "Middleware functions execute during the request-response cycle and can modify request/response objects.",
+        category: "Node.js/Express",
+        selectedAnswer: null,
+        answer: "",
+        score: 0,
+        aiScore: null,
+        feedback: "",
+      },
+      {
+        id: "q_node_2",
+        question: "How do you handle asynchronous operations in Node.js?",
+        difficulty: "Medium",
+        time: 60,
+        options: [
+          "Use only synchronous functions",
+          "Use callbacks, promises, or async/await",
+          "Use setTimeout for all operations",
+          "Avoid asynchronous operations entirely",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "Node.js handles async operations using callbacks, promises, and async/await patterns for non-blocking I/O.",
+        category: "Node.js Async",
+        selectedAnswer: null,
+        answer: "",
+        score: 0,
+        aiScore: null,
+        feedback: "",
+      }
+    );
+  }
+
+  // Generate Python questions if Python is mentioned
+  if (hasPython) {
+    questions.push({
+      id: "q_python_1",
+      question: "What is the difference between a list and tuple in Python?",
+      difficulty: "Easy",
+      time: 20,
+      options: [
+        "Lists are immutable, tuples are mutable",
+        "Lists are mutable, tuples are immutable",
+        "There is no difference",
+        "Lists are for numbers, tuples are for strings",
+      ],
+      correctAnswer: 1,
+      explanation:
+        "Lists are mutable (can be changed) while tuples are immutable (cannot be changed after creation).",
+      category: "Python",
+      selectedAnswer: null,
+      answer: "",
+      score: 0,
+      aiScore: null,
+      feedback: "",
+    });
+  }
+
+  // Generate Database questions if database skills are mentioned
+  if (hasDatabase) {
+    questions.push({
+      id: "q_db_1",
+      question: "What is the difference between SQL and NoSQL databases?",
+      difficulty: "Medium",
+      time: 60,
+      options: [
+        "SQL is newer than NoSQL",
+        "SQL uses structured data with schemas, NoSQL is more flexible",
+        "NoSQL is always faster than SQL",
+        "SQL is only for small applications",
+      ],
+      correctAnswer: 1,
+      explanation:
+        "SQL databases use structured data with predefined schemas, while NoSQL databases offer more flexibility in data structure.",
+      category: "Database",
+      selectedAnswer: null,
+      answer: "",
+      score: 0,
+      aiScore: null,
+      feedback: "",
+    });
+  }
+
+  // Generate DevOps questions if DevOps skills are mentioned
+  if (hasDevOps) {
+    questions.push({
+      id: "q_devops_1",
+      question: "What is the main benefit of containerization with Docker?",
+      difficulty: "Hard",
+      time: 120,
+      options: [
+        "It makes applications run faster",
+        "It provides consistency across different environments",
+        "It eliminates the need for testing",
+        "It automatically scales applications",
+      ],
+      correctAnswer: 1,
+      explanation:
+        "Docker provides consistency by packaging applications with their dependencies, ensuring they run the same across environments.",
+      category: "DevOps",
+      selectedAnswer: null,
+      answer: "",
+      score: 0,
+      aiScore: null,
+      feedback: "",
+    });
+  }
+
+  // Generate JavaScript questions if JavaScript is mentioned
+  if (hasJavaScript) {
+    questions.push({
+      id: "q_js_1",
+      question: "What is the difference between '==' and '===' in JavaScript?",
+      difficulty: "Easy",
+      time: 20,
+      options: [
+        "No difference, they're the same",
+        "'==' compares values, '===' compares values and types",
+        "'===' is deprecated",
+        "'==' is faster than '==='",
+      ],
+      correctAnswer: 1,
+      explanation:
+        "'==' performs type coercion before comparison, while '===' compares both value and type without coercion.",
+      category: "JavaScript",
+      selectedAnswer: null,
+      answer: "",
+      score: 0,
+      aiScore: null,
+      feedback: "",
+    });
+  }
+
+  // Fill remaining slots with general questions if we don't have 6 yet
+  const generalQuestions = getFallbackQuestions();
+  while (questions.length < 6) {
+    const remainingNeeded = 6 - questions.length;
+    const generalToAdd = generalQuestions.slice(0, remainingNeeded);
+    questions.push(...generalToAdd);
+  }
+
+  // Ensure we have exactly 6 questions with proper difficulty distribution
+  return questions.slice(0, 6).map((q, index) => {
+    // Adjust difficulty to ensure we have 2 easy, 2 medium, 2 hard
+    if (index < 2) {
+      q.difficulty = "Easy";
+      q.time = 20;
+    } else if (index < 4) {
+      q.difficulty = "Medium";
+      q.time = 60;
+    } else {
+      q.difficulty = "Hard";
+      q.time = 120;
+    }
+    return q;
+  });
 };
 
 // Fallback questions if AI fails

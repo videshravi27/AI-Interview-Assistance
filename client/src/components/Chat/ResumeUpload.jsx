@@ -186,7 +186,7 @@ const ResumeUpload = ({ onComplete }) => {
     if (collectingInfo) {
         return (
             <div className="h-full flex items-center justify-center">
-                <div className="bg-white/95 backdrop-blur-sm rounded-2xl border border-white/20 shadow-2xl p-8 max-w-lg w-full mx-6">
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 max-w-lg w-full mx-6">
                     <div className="mb-6">
                         <h3 className="text-xl font-bold text-gray-800 mb-2">
                             Complete Your Profile
@@ -213,7 +213,7 @@ const ResumeUpload = ({ onComplete }) => {
                         </div>
 
                         {error && (
-                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+                            <div className="bg-gray-100 border border-gray-300 text-gray-800 px-4 py-3 rounded-xl text-sm">
                                 {error}
                             </div>
                         )}
@@ -221,7 +221,7 @@ const ResumeUpload = ({ onComplete }) => {
                         <div className="flex items-center justify-between">
                             <button
                                 onClick={submitFieldInput}
-                                className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors"
+                                className="bg-gray-900 hover:bg-gray-800 text-white px-6 py-3 rounded-xl font-semibold transition-colors"
                             >
                                 Continue
                             </button>
@@ -238,14 +238,14 @@ const ResumeUpload = ({ onComplete }) => {
 
     return (
         <div className="h-full flex items-center justify-center">
-            <div className="bg-white/95 backdrop-blur-sm rounded-2xl border border-white/20 shadow-2xl overflow-hidden max-w-6xl w-full mx-6">
-                <div className="text-center p-8 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 text-white">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden max-w-6xl w-full mx-6">
+                <div className="text-center p-8 bg-white border-b border-gray-200">
                     <h2 className="text-3xl font-bold mb-4">
                         Welcome to Your AI Interview
                     </h2>
-                    <p className="text-xl text-purple-100 max-w-3xl mx-auto">
-                        Upload your resume to begin your full-stack developer interview.
-                        I'll ask you 6 multiple choice questions covering React and Node.js concepts.
+                    <p className="text-xl text-black max-w-3xl mx-auto">
+                        Upload your resume to begin your interview.
+                        I'll ask you 6 multiple choice questions covering your resume.
                     </p>
                 </div>
 
@@ -262,7 +262,7 @@ const ResumeUpload = ({ onComplete }) => {
                                         type="file"
                                         accept=".pdf,.docx"
                                         onChange={handleFileChange}
-                                        className="w-full px-4 py-4 border-2 border-dashed border-gray-300 rounded-xl focus:outline-none focus:border-purple-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+                                        className="w-full px-4 py-4 border border-dashed border-gray-400 rounded-xl focus:outline-none focus:border-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-gray-100 file:text-gray-800 hover:file:bg-gray-200"
                                     />
                                     <div className="mt-2 text-sm text-gray-500">
                                         Supported formats: PDF, DOCX (Max size: 10MB)
@@ -271,13 +271,13 @@ const ResumeUpload = ({ onComplete }) => {
                             </div>
 
                             {file && (
-                                <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl">
+                                <div className="bg-gray-100 border border-gray-300 text-gray-800 px-4 py-3 rounded-xl">
                                     ✓ File selected: {file.name}
                                 </div>
                             )}
 
                             {error && (
-                                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+                                <div className="bg-gray-100 border border-gray-300 text-gray-800 px-4 py-3 rounded-xl">
                                     {error}
                                 </div>
                             )}
@@ -285,7 +285,7 @@ const ResumeUpload = ({ onComplete }) => {
                             <button
                                 onClick={handleUpload}
                                 disabled={!file || uploading}
-                                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed text-white px-6 py-4 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-3"
+                                className="w-full bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-4 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-3"
                             >
                                 {uploading ? (
                                     <>
@@ -322,7 +322,7 @@ const ResumeUpload = ({ onComplete }) => {
                                 </ul>
                             </div>
 
-                            <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-5">
+                            {/* <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-5">
                                 <h4 className="font-bold text-lg mb-3 text-emerald-900">What We'll Extract:</h4>
                                 <ul className="space-y-2 text-sm text-emerald-800">
                                     <li className="flex items-center gap-2">
@@ -342,7 +342,7 @@ const ResumeUpload = ({ onComplete }) => {
                                         Skills and experience
                                     </li>
                                 </ul>
-                            </div>
+                            </div> */}
 
                             <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-5">
                                 <h4 className="font-bold text-lg mb-3 text-purple-900">Assessment Criteria:</h4>
@@ -354,10 +354,6 @@ const ResumeUpload = ({ onComplete }) => {
                                     <li className="flex items-center gap-2">
                                         <div className="w-2 h-2 rounded-full bg-purple-500"></div>
                                         Problem-solving approach
-                                    </li>
-                                    <li className="flex items-center gap-2">
-                                        <div className="w-2 h-2 rounded-full bg-purple-500"></div>
-                                        Communication clarity
                                     </li>
                                     <li className="flex items-center gap-2">
                                         <div className="w-2 h-2 rounded-full bg-purple-500"></div>

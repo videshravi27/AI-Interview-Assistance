@@ -13,19 +13,19 @@ const Message = ({ message, isUser = false }) => {
     const getMessageStyle = () => {
         switch (type) {
             case 'question':
-                return 'bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 text-blue-900';
+                return 'bg-gray-50 border border-gray-200 text-gray-900';
             case 'answer':
-                return 'bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 text-emerald-900';
+                return 'bg-gray-100 border border-gray-300 text-gray-900';
             case 'feedback':
-                return 'bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 text-purple-900';
+                return 'bg-white border border-gray-200 text-gray-800';
             case 'summary':
-                return 'bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 text-amber-900';
+                return 'bg-gray-100 border border-gray-300 text-gray-900';
             case 'error':
-                return 'bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 text-red-900';
+                return 'bg-gray-50 border border-gray-300 text-gray-800';
             case 'system':
-                return 'bg-gradient-to-r from-gray-50 to-slate-50 border border-gray-200 text-gray-700';
+                return 'bg-gray-50 border border-gray-200 text-gray-700';
             default:
-                return isUser ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white' : 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-900';
+                return isUser ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-900';
         }
     };
 
@@ -71,8 +71,8 @@ const Message = ({ message, isUser = false }) => {
                         )}
                         {difficulty && (
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${difficulty === 'Easy' ? 'bg-green-100 text-green-700' :
-                                    difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
-                                        'bg-red-100 text-red-700'
+                                difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-red-100 text-red-700'
                                 }`}>
                                 {difficulty}
                             </span>

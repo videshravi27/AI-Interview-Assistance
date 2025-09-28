@@ -8,6 +8,7 @@ const initialState = {
   searchTerm: "",
   sortBy: "score", // 'score', 'name', 'date'
   sortOrder: "desc", // 'asc', 'desc'
+  deletedCandidateIds: [], // Track deleted candidates to prevent restoration
 };
 
 const candidatesSlice = createSlice({
@@ -38,6 +39,13 @@ const candidatesSlice = createSlice({
       };
       state.candidates.push(newCandidate);
       state.activeCandidate = newCandidate;
+
+      // Force immediate persistence
+      setTimeout(() => {
+        if (typeof window !== "undefined" && window.__REDUX_PERSIST_FLUSH__) {
+          window.__REDUX_PERSIST_FLUSH__();
+        }
+      }, 100);
     },
 
     // Update candidate information
@@ -80,6 +88,15 @@ const candidatesSlice = createSlice({
       }
 
       const candidateData = action.payload;
+
+      // Don't restore if candidate was deliberately deleted
+      if (state.deletedCandidateIds.includes(candidateData.id)) {
+        console.log(
+          `Skipping restoration of deleted candidate: ${candidateData.name}`
+        );
+        return;
+      }
+
       const existingIndex = state.candidates.findIndex(
         (c) => c.id === candidateData.id
       );
@@ -263,6 +280,24 @@ const candidatesSlice = createSlice({
         if (state.activeCandidate && state.activeCandidate.id === candidateId) {
           state.activeCandidate = state.candidates[index];
         }
+
+        // Force immediate persistence for completed interviews
+        setTimeout(() => {
+          if (typeof window !== "undefined" && window.__REDUX_PERSIST_FLUSH__) {
+            window.__REDUX_PERSIST_FLUSH__();
+          }
+
+          // Also create backup
+          try {
+            const completedCandidate = state.candidates[index];
+            localStorage.setItem(
+              `completed-interview-${candidateId}`,
+              JSON.stringify(completedCandidate)
+            );
+          } catch (error) {
+            console.error("Error creating interview backup:", error);
+          }
+        }, 100);
       }
     },
 
@@ -316,14 +351,43 @@ const candidatesSlice = createSlice({
       }
 
       const candidateId = action.payload;
+
+      // Add to deleted candidates list to prevent restoration
+      if (!state.deletedCandidateIds.includes(candidateId)) {
+        state.deletedCandidateIds.push(candidateId);
+      }
+
+      // Remove candidate from state
       state.candidates = state.candidates.filter((c) => c.id !== candidateId);
 
+      // Clear related state references
       if (state.activeCandidate && state.activeCandidate.id === candidateId) {
         state.activeCandidate = null;
       }
 
       if (state.selectedCandidateId === candidateId) {
         state.selectedCandidateId = null;
+      }
+
+      // Clean up localStorage items related to this candidate
+      try {
+        const keys = Object.keys(localStorage);
+        keys.forEach((key) => {
+          if (key.includes(candidateId)) {
+            localStorage.removeItem(key);
+          }
+        });
+
+        // Force persist flush to immediately save the deletion
+        if (typeof window !== "undefined" && window.__REDUX_PERSIST_FLUSH__) {
+          setTimeout(() => {
+            window.__REDUX_PERSIST_FLUSH__();
+          }, 50);
+        }
+
+        console.log(`Cleaned up localStorage for candidate ${candidateId}`);
+      } catch (error) {
+        console.error("Error cleaning localStorage:", error);
       }
     },
   },

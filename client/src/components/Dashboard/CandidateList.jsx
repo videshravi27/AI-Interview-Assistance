@@ -26,7 +26,9 @@ const CandidateList = () => {
                     // Check if this candidate already exists in Redux
                     const existingCandidate = candidates.find(c => c.id === candidateData.id);
 
-                    if (!existingCandidate && candidateData.status === 'completed') {
+                    // Only restore if the candidate doesn't exist and was actually completed
+                    // (not just deleted)
+                    if (!existingCandidate && candidateData.status === 'completed' && candidateData.interviewCompletedAt) {
                         console.log(`Restoring completed interview for: ${candidateData.name}`);
 
                         // Add the candidate back to Redux state
@@ -99,19 +101,38 @@ const CandidateList = () => {
 
     const handleDeleteCandidate = (e, candidateId) => {
         e.stopPropagation();
-        if (window.confirm('Are you sure you want to delete this candidate? This action cannot be undone.')) {
-            dispatch(deleteCandidate(candidateId));
-        }
+        // Remove candidate from Redux store
+        dispatch(deleteCandidate(candidateId));
+
+        // Clean up localStorage backups for this candidate
+        const keys = Object.keys(localStorage);
+        keys.forEach(key => {
+            if (key.includes(candidateId)) {
+                localStorage.removeItem(key);
+            }
+        });
+
+        // Also clear any backup keys that might restore this candidate
+        localStorage.removeItem(`interview-backup-${candidateId}`);
+        localStorage.removeItem(`completed-interview-${candidateId}`);
+        localStorage.removeItem(`candidate-${candidateId}`);
+
+        // Force persist flush to save the deletion immediately
+        setTimeout(() => {
+            if (window.__REDUX_PERSIST_FLUSH__) {
+                window.__REDUX_PERSIST_FLUSH__();
+            }
+        }, 100);
     };
 
     const getStatusColor = (status) => {
         switch (status) {
             case 'completed':
-                return 'bg-green-100 text-green-800';
+                return 'bg-gray-100 text-gray-800';
             case 'interview':
-                return 'bg-blue-100 text-blue-800';
+                return 'bg-gray-200 text-gray-900';
             case 'paused':
-                return 'bg-yellow-100 text-yellow-800';
+                return 'bg-gray-50 text-gray-700';
             case 'info_collection':
                 return 'bg-gray-100 text-gray-800';
             default:
@@ -137,15 +158,15 @@ const CandidateList = () => {
     const getRatingColor = (rating) => {
         switch (rating?.toLowerCase()) {
             case 'excellent':
-                return 'text-green-600';
+                return 'text-gray-900';
             case 'good':
-                return 'text-blue-600';
+                return 'text-gray-800';
             case 'average':
-                return 'text-yellow-600';
+                return 'text-gray-700';
             case 'below average':
-                return 'text-orange-600';
+                return 'text-gray-600';
             case 'poor':
-                return 'text-red-600';
+                return 'text-gray-500';
             default:
                 return 'text-gray-600';
         }
@@ -153,7 +174,7 @@ const CandidateList = () => {
 
     if (candidates.length === 0) {
         return (
-            <div className="candidate-list bg-white rounded-xl shadow-lg border-2 p-10">
+            <div className="candidate-list bg-white rounded-xl shadow-sm border border-gray-200 p-10">
                 <div className="text-center text-gray-500">
                     <div className="text-6xl mb-4">📋</div>
                     <h3 className="text-2xl font-semibold mb-3">No Candidates Yet</h3>
@@ -164,8 +185,8 @@ const CandidateList = () => {
     }
 
     return (
-        <div className="candidate-list bg-white rounded-xl shadow-lg border-2">
-            <div className="p-6 border-b-2 border-gray-200">
+        <div className="candidate-list bg-white rounded-xl shadow-sm border border-gray-200 p-10">
+            <div className="p-6 border-b border-gray-200">
                 <h2 className="text-2xl font-bold text-gray-800">
                     Candidates ({filteredCandidates.length})
                 </h2>
@@ -219,16 +240,16 @@ const CandidateList = () => {
                                 <div className="flex items-center justify-between text-base">
                                     <div className="text-gray-500">
                                         {candidate.interviewCompletedAt ? (
-                                            `Completed ${new Date(candidate.interviewCompletedAt).toLocaleDateString()}`
+                                            `Completed - ${new Date(candidate.interviewCompletedAt).toLocaleDateString()}`
                                         ) : candidate.interviewStartedAt ? (
-                                            `Started ${new Date(candidate.interviewStartedAt).toLocaleDateString()}`
+                                            `Attended - ${new Date(candidate.interviewStartedAt).toLocaleDateString()}`
                                         ) : (
-                                            `Created ${new Date(candidate.createdAt).toLocaleDateString()}`
+                                            `Created - ${new Date(candidate.createdAt).toLocaleDateString()}`
                                         )}
                                     </div>
 
                                     {candidate.status === 'completed' && (
-                                        <div className="font-bold text-blue-600 text-lg">
+                                        <div className="font-bold text-gray-800 text-lg">
                                             Score: {candidate.totalScore || 0}/{candidate.maxScore || 0}
                                         </div>
                                     )}
@@ -241,7 +262,7 @@ const CandidateList = () => {
                                         </div>
                                         <div className="w-full bg-gray-200 rounded-full h-3">
                                             <div
-                                                className="bg-blue-500 h-3 rounded-full transition-all duration-300"
+                                                className="bg-gray-800 h-3 rounded-full transition-all duration-300"
                                                 style={{
                                                     width: `${((candidate.currentQuestionIndex + 1) / (candidate.questions?.length || 1)) * 100}%`
                                                 }}

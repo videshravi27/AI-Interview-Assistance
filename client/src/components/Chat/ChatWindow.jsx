@@ -146,8 +146,14 @@ const ChatWindow = () => {
                 }
             }));
 
-            // Generate questions using AI
-            const questions = await generateInterviewQuestions();
+            // Generate questions using AI with resume data
+            const questions = await generateInterviewQuestions({
+                name: activeCandidate.name,
+                resumeText: activeCandidate.resumeText,
+                skills: activeCandidate.skills,
+                technologies: activeCandidate.technologies,
+                experience: activeCandidate.experience
+            });
 
             // Start interview in Redux
             dispatch(startInterview({
@@ -484,28 +490,28 @@ const ChatWindow = () => {
         <div className="h-full flex flex-col">
             {/* Fixed Top Section - Question Area and Timer */}
             {isInterviewActive && currentQuestion && (
-                <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-t-2xl">
+                <div className="bg-white border-b border-gray-200 shadow-sm">
                     <div className="grid grid-cols-1 xl:grid-cols-4 lg:grid-cols-1 gap-4 lg:gap-6 p-4 lg:p-6">
                         {/* Question Section - Takes most space */}
                         <div className="xl:col-span-3 lg:col-span-1">
                             <div className="mb-4">
                                 <div className="flex items-center justify-between mb-3">
                                     <div className="flex items-center gap-4">
-                                        <h2 className="text-lg lg:text-xl font-bold text-white">Interview Session</h2>
-                                        <div className="bg-white/20 px-2 lg:px-3 py-1 rounded-full text-xs font-medium text-white">
+                                        <h2 className="text-lg lg:text-xl font-bold text-gray-900">Interview Session</h2>
+                                        <div className="bg-gray-100 px-2 lg:px-3 py-1 rounded-full text-xs font-medium text-gray-700">
                                             Question {activeCandidate.currentQuestionIndex + 1} / {activeCandidate.questions.length}
                                         </div>
                                     </div>
-                                    <div className={`px-2 lg:px-3 py-1 rounded-full text-xs font-bold ${currentQuestion.difficulty === 'Easy' ? 'bg-green-100 text-green-800' :
-                                        currentQuestion.difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
-                                            'bg-red-100 text-red-800'
+                                    <div className={`px-2 lg:px-3 py-1 rounded-full text-xs font-bold ${currentQuestion.difficulty === 'Easy' ? 'bg-gray-100 text-gray-700' :
+                                            currentQuestion.difficulty === 'Medium' ? 'bg-gray-200 text-gray-800' :
+                                                'bg-gray-800 text-white'
                                         }`}>
                                         {currentQuestion.difficulty}
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="bg-white/95 backdrop-blur-sm rounded-xl p-4 lg:p-6 border border-white/20 shadow-lg">
+                            <div className="bg-gray-50 rounded-xl p-4 lg:p-6 border border-gray-200">
                                 <h3 className="text-base lg:text-lg font-semibold text-gray-900 mb-4 lg:mb-6 leading-relaxed">
                                     {currentQuestion.question}
                                 </h3>
@@ -519,12 +525,12 @@ const ChatWindow = () => {
                                                 onClick={() => setSelectedOption(index)}
                                                 disabled={loading || isTyping}
                                                 className={`w-full text-left p-2 lg:p-3 rounded-lg border transition-all duration-200 ${selectedOption === index
-                                                    ? 'border-purple-500 bg-purple-50 text-purple-900 shadow-md'
-                                                    : 'border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50'
+                                                    ? 'border-gray-800 bg-gray-100 text-gray-900 shadow-sm'
+                                                    : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
                                                     } ${loading || isTyping ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                                             >
                                                 <div className="flex items-center gap-2 lg:gap-3">
-                                                    <div className={`w-3 lg:w-4 h-3 lg:h-4 rounded-full border-2 flex items-center justify-center ${selectedOption === index ? 'border-purple-500 bg-purple-500' : 'border-gray-300'
+                                                    <div className={`w-3 lg:w-4 h-3 lg:h-4 rounded-full border-2 flex items-center justify-center ${selectedOption === index ? 'border-gray-800 bg-gray-800' : 'border-gray-300'
                                                         }`}>
                                                         {selectedOption === index && (
                                                             <div className="w-1 lg:w-1.5 h-1 lg:h-1.5 rounded-full bg-white"></div>
@@ -548,7 +554,7 @@ const ChatWindow = () => {
                                             onKeyPress={handleKeyPress}
                                             placeholder="Type your answer here..."
                                             disabled={loading || isTyping}
-                                            className="w-full p-3 lg:p-4 border border-gray-200 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200 resize-none transition-colors text-sm"
+                                            className="w-full p-3 lg:p-4 border border-gray-200 rounded-lg focus:border-gray-600 focus:ring-1 focus:ring-gray-600 resize-none transition-colors text-sm"
                                             rows="4"
                                         />
                                     </div>
@@ -563,7 +569,7 @@ const ChatWindow = () => {
                                             (!currentQuestion.options && !currentAnswer.trim()) ||
                                             loading || isTyping
                                         }
-                                        className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 lg:px-8 py-2 lg:py-3 rounded-xl font-semibold transition-colors text-sm lg:text-base"
+                                        className="bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 lg:px-8 py-2 lg:py-3 rounded-lg font-semibold transition-colors text-sm lg:text-base"
                                     >
                                         {loading ? 'Submitting...' : 'Submit Answer'}
                                     </button>
@@ -573,7 +579,7 @@ const ChatWindow = () => {
 
                         {/* Timer Section - Compact on right, below on mobile */}
                         <div className="xl:col-span-1 lg:col-span-1">
-                            <div className="bg-white/95 backdrop-blur-sm rounded-xl border border-white/20 shadow-lg h-full min-h-[200px] xl:min-h-[300px]">
+                            <div className="bg-white rounded-xl border border-gray-200 shadow-sm h-full min-h-[200px] xl:min-h-[300px]">
                                 <Timer
                                     key={`timer-${activeCandidate.id}-${activeCandidate.currentQuestionIndex}`}
                                     duration={currentQuestion.time}
@@ -591,14 +597,14 @@ const ChatWindow = () => {
             )}
 
             {/* Main Content Area - Below the question */}
-            <div className="flex-1 bg-white/95 backdrop-blur-sm rounded-b-2xl border border-white/20 shadow-2xl overflow-hidden flex flex-col">
+            <div className="flex-1 bg-gray-50 border border-gray-200 shadow-sm overflow-hidden flex flex-col">
                 {/* Header for non-interview states */}
                 {(!isInterviewActive || !currentQuestion) && (
-                    <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 px-6 py-5 text-white rounded-t-2xl">
+                    <div className="bg-white border-b border-gray-200 px-6 py-5 text-gray-900">
                         <div className="flex items-center justify-between">
                             <div>
                                 <h2 className="text-xl font-bold">Interview Session</h2>
-                                <p className="text-white/90 text-sm mt-1">
+                                <p className="text-gray-600 text-sm mt-1">
                                     Candidate: {activeCandidate.name}
                                 </p>
                             </div>
@@ -607,7 +613,7 @@ const ChatWindow = () => {
                                 {isInterviewCompleted && (
                                     <button
                                         onClick={startNewInterview}
-                                        className="bg-white text-purple-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors"
+                                        className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-800 transition-colors"
                                     >
                                         New Interview
                                     </button>
@@ -633,14 +639,14 @@ const ChatWindow = () => {
                     {/* Show progress indicator during interview */}
                     {isInterviewActive && (
                         <div className="text-center py-8">
-                            <div className="bg-gradient-to-r from-purple-100 to-indigo-100 rounded-2xl p-6">
+                            <div className="bg-white rounded-2xl p-6 border border-gray-200">
                                 <div className="text-gray-600 mb-2">Interview in Progress</div>
                                 <div className="text-lg font-semibold text-gray-900">
                                     Question {activeCandidate.currentQuestionIndex + 1} of {activeCandidate.questions.length}
                                 </div>
-                                <div className="mt-4 bg-white rounded-full h-2">
+                                <div className="mt-4 bg-gray-200 rounded-full h-2">
                                     <div
-                                        className="bg-gradient-to-r from-purple-500 to-indigo-500 h-2 rounded-full transition-all duration-300"
+                                        className="bg-gray-800 h-2 rounded-full transition-all duration-300"
                                         style={{
                                             width: `${((activeCandidate.currentQuestionIndex + 1) / activeCandidate.questions.length) * 100}%`
                                         }}
@@ -655,7 +661,7 @@ const ChatWindow = () => {
 
                     {loading && (
                         <div className="flex items-center gap-3 justify-center py-6">
-                            <div className="animate-spin rounded-full h-5 w-5 border-2 border-purple-500 border-t-transparent"></div>
+                            <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-600 border-t-transparent"></div>
                             <span className="text-gray-600">AI is processing...</span>
                         </div>
                     )}
@@ -669,7 +675,7 @@ const ChatWindow = () => {
                         <button
                             onClick={startInterviewProcess}
                             disabled={loading}
-                            className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:from-gray-400 disabled:to-gray-400 text-white py-4 rounded-xl font-bold text-lg transition-all duration-300"
+                            className="w-full bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 text-white py-4 rounded-xl font-bold text-lg transition-all duration-300"
                         >
                             {loading ? 'Generating Questions...' : 'Start Interview'}
                         </button>
@@ -678,8 +684,8 @@ const ChatWindow = () => {
 
                 {/* Paused State */}
                 {isInterviewPaused && (
-                    <div className="p-6 bg-yellow-50 border-t border-yellow-200">
-                        <div className="text-center text-yellow-800 font-medium">
+                    <div className="p-6 bg-gray-100 border-t border-gray-200">
+                        <div className="text-center text-gray-800 font-medium">
                             Interview is paused. Click Resume to continue.
                         </div>
                     </div>

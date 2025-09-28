@@ -31,7 +31,7 @@ const SearchSort = () => {
     };
 
     return (
-        <div className="search-sort bg-white rounded-xl shadow-lg border-2 p-8 mb-6">
+        <div className="search-sort bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-6">
             {/* Search */}
             <div className="mb-6">
                 <label className="block text-lg font-semibold text-gray-700 mb-3">
@@ -43,7 +43,7 @@ const SearchSort = () => {
                         placeholder="Search by name, email, phone, or rating..."
                         value={searchTerm}
                         onChange={handleSearchChange}
-                        className="w-full px-4 py-4 pr-12 border-2 border-gray-300 rounded-xl text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-4 py-4 pr-12 border border-gray-300 rounded-xl text-lg focus:outline-none focus:ring-1 focus:ring-gray-600 focus:border-gray-600"
                     />
                     {searchTerm && (
                         <button
@@ -65,8 +65,8 @@ const SearchSort = () => {
                 <div className="flex flex-wrap gap-3">
                     <button
                         onClick={() => handleSortChange('score')}
-                        className={`px-6 py-3 text-base rounded-lg border-2 transition-colors font-medium ${sortBy === 'score'
-                            ? 'bg-blue-100 border-blue-300 text-blue-800'
+                        className={`px-6 py-3 text-base rounded-lg border transition-colors font-medium ${sortBy === 'score'
+                            ? 'bg-gray-100 border-gray-300 text-gray-800'
                             : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                             }`}
                     >
@@ -75,8 +75,8 @@ const SearchSort = () => {
 
                     <button
                         onClick={() => handleSortChange('name')}
-                        className={`px-6 py-3 text-base rounded-lg border-2 transition-colors font-medium ${sortBy === 'name'
-                            ? 'bg-blue-100 border-blue-300 text-blue-800'
+                        className={`px-6 py-3 text-base rounded-lg border transition-colors font-medium ${sortBy === 'name'
+                            ? 'bg-gray-100 border-gray-300 text-gray-800'
                             : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                             }`}
                     >
@@ -85,8 +85,8 @@ const SearchSort = () => {
 
                     <button
                         onClick={() => handleSortChange('date')}
-                        className={`px-6 py-3 text-base rounded-lg border-2 transition-colors font-medium ${sortBy === 'date'
-                            ? 'bg-blue-100 border-blue-300 text-blue-800'
+                        className={`px-6 py-3 text-base rounded-lg border transition-colors font-medium ${sortBy === 'date'
+                            ? 'bg-gray-100 border-gray-300 text-gray-800'
                             : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                             }`}
                     >
@@ -95,8 +95,8 @@ const SearchSort = () => {
 
                     <button
                         onClick={() => handleSortChange('status')}
-                        className={`px-6 py-3 text-base rounded-lg border-2 transition-colors font-medium ${sortBy === 'status'
-                            ? 'bg-blue-100 border-blue-300 text-blue-800'
+                        className={`px-6 py-3 text-base rounded-lg border transition-colors font-medium ${sortBy === 'status'
+                            ? 'bg-gray-100 border-gray-300 text-gray-800'
                             : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                             }`}
                     >
@@ -106,31 +106,38 @@ const SearchSort = () => {
             </div>
 
             {/* Quick Stats */}
-            {/* Quick Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-base auto-rows-fr">
-                {/** Card Template */}
-                <div className="bg-gray-50 p-5 rounded-xl border flex flex-col justify-between h-full">
-                    <div className="text-gray-500 text-sm font-medium truncate">Total Candidates</div>
-                    <div className="text-3xl font-bold text-gray-900">{candidates.length}</div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {/** Card Template - Total Candidates */}
+                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex flex-col justify-center items-center text-center min-h-[80px]">
+                    <div className="text-gray-600 text-xs font-medium leading-tight mb-1">
+                        Total<br />Candidates
+                    </div>
+                    <div className="text-2xl font-bold text-gray-900">{candidates.length}</div>
                 </div>
 
-                <div className="bg-green-50 p-5 rounded-xl border flex flex-col justify-between h-full">
-                    <div className="text-green-600 text-sm font-medium truncate">Completed</div>
-                    <div className="text-3xl font-bold text-green-800">
+                <div className="bg-white p-4 rounded-xl border border-gray-200 flex flex-col justify-center items-center text-center min-h-[80px]">
+                    <div className="text-gray-600 text-xs font-medium leading-tight mb-1">
+                        Completed
+                    </div>
+                    <div className="text-2xl font-bold text-gray-900">
                         {candidates.filter(c => c.status === 'completed').length}
                     </div>
                 </div>
 
-                <div className="bg-blue-50 p-5 rounded-xl border flex flex-col justify-between h-full">
-                    <div className="text-blue-600 text-sm font-medium truncate">In Progress</div>
-                    <div className="text-3xl font-bold text-blue-800">
+                <div className="bg-gray-100 p-4 rounded-xl border border-gray-200 flex flex-col justify-center items-center text-center min-h-[80px]">
+                    <div className="text-gray-600 text-xs font-medium leading-tight mb-1">
+                        In<br />Progress
+                    </div>
+                    <div className="text-2xl font-bold text-gray-800">
                         {candidates.filter(c => c.status === 'interview').length}
                     </div>
                 </div>
 
-                <div className="bg-yellow-50 p-5 rounded-xl border flex flex-col justify-between h-full">
-                    <div className="text-yellow-600 text-sm font-medium truncate">Paused</div>
-                    <div className="text-3xl font-bold text-yellow-800">
+                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex flex-col justify-center items-center text-center min-h-[80px]">
+                    <div className="text-gray-600 text-xs font-medium leading-tight mb-1">
+                        Paused
+                    </div>
+                    <div className="text-2xl font-bold text-gray-700">
                         {candidates.filter(c => c.status === 'paused').length}
                     </div>
                 </div>

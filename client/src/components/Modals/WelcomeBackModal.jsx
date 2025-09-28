@@ -62,9 +62,9 @@ const WelcomeBackModal = ({ onResume }) => {
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white/95 backdrop-blur-sm rounded-2xl border border-white/20 shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
                 {/* Header */}
-                <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-t-2xl">
+                <div className="p-6 border-b border-gray-200 bg-gray-100 text-gray-900 rounded-t-2xl">
                     <div className="flex items-center gap-3 mb-2">
                         <div className="text-2xl">👋</div>
                         <h2 className="text-xl font-bold">
@@ -86,7 +86,7 @@ const WelcomeBackModal = ({ onResume }) => {
                         {interruptedCandidates.map((candidate) => (
                             <div
                                 key={candidate.id}
-                                className="border border-gray-200 rounded-xl p-4 hover:bg-purple-50 hover:border-purple-200 transition-all duration-200 cursor-pointer group"
+                                className="border border-gray-200 rounded-xl p-4 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 cursor-pointer group"
                                 onClick={() => handleResumeInterview(candidate)}
                             >
                                 <div className="flex items-start justify-between mb-3">
@@ -99,8 +99,8 @@ const WelcomeBackModal = ({ onResume }) => {
                                         </p>
                                     </div>
                                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${candidate.status === 'paused'
-                                            ? 'bg-yellow-100 text-yellow-800'
-                                            : 'bg-blue-100 text-blue-800'
+                                        ? 'bg-gray-100 text-gray-800'
+                                        : 'bg-gray-200 text-gray-900'
                                         }`}>
                                         {candidate.status === 'paused' ? 'Paused' : 'In Progress'}
                                     </span>
@@ -127,7 +127,7 @@ const WelcomeBackModal = ({ onResume }) => {
                                     <div className="mb-3">
                                         <div className="w-full bg-gray-200 rounded-full h-2">
                                             <div
-                                                className="bg-gradient-to-r from-purple-500 to-indigo-600 h-2 rounded-full transition-all duration-300"
+                                                className="bg-gray-800 h-2 rounded-full transition-all duration-300"
                                                 style={{
                                                     width: `${((candidate.currentQuestionIndex + 1) / candidate.questions.length) * 100}%`
                                                 }}
@@ -152,7 +152,7 @@ const WelcomeBackModal = ({ onResume }) => {
                     <div className="space-y-3">
                         <button
                             onClick={handleStartNew}
-                            className="w-full px-4 py-3 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white rounded-xl font-semibold transition-all duration-300 shadow-md"
+                            className="w-full px-4 py-3 bg-gray-900 hover:bg-gray-800 text-white rounded-xl font-semibold transition-all duration-300 shadow-md"
                         >
                             Start New Interview
                         </button>
@@ -168,7 +168,7 @@ const WelcomeBackModal = ({ onResume }) => {
 
                 {/* Footer */}
                 <div className="px-6 pb-6">
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4">
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
                         <p className="text-xs text-blue-700 text-center flex items-center justify-center gap-2">
                             <span>💡</span>
                             Your progress is automatically saved. You can resume anytime!

@@ -73,16 +73,16 @@ const Timer = ({
 
     const getTimerColor = () => {
         const percentage = (timeLeft / duration) * 100;
-        if (percentage <= 10) return 'text-red-600';
-        if (percentage <= 25) return 'text-orange-500';
-        return 'text-green-600';
+        if (percentage <= 10) return 'text-gray-800';
+        if (percentage <= 25) return 'text-gray-700';
+        return 'text-gray-900';
     };
 
     const getProgressColor = () => {
         const percentage = (timeLeft / duration) * 100;
-        if (percentage <= 10) return 'bg-red-500';
-        if (percentage <= 25) return 'bg-orange-500';
-        return 'bg-green-500';
+        if (percentage <= 10) return 'text-gray-800';
+        if (percentage <= 25) return 'text-gray-700';
+        return 'text-gray-900';
     };
 
     const progressPercentage = ((duration - timeLeft) / duration) * 100;
@@ -153,7 +153,7 @@ const Timer = ({
                 {isActive && onPause && (
                     <button
                         onClick={onPause}
-                        className="w-full px-3 py-2 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 rounded-lg transition-colors font-medium text-xs"
+                        className="w-full px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg transition-colors font-medium text-xs"
                     >
                         ⏸ Pause
                     </button>
@@ -162,7 +162,7 @@ const Timer = ({
                 {isPaused && onResume && (
                     <button
                         onClick={onResume}
-                        className="w-full px-3 py-2 bg-green-100 hover:bg-green-200 text-green-800 rounded-lg transition-colors font-medium text-xs"
+                        className="w-full px-3 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg transition-colors font-medium text-xs"
                     >
                         ▶ Resume
                     </button>
@@ -171,19 +171,19 @@ const Timer = ({
 
             {/* Warning messages */}
             {timeLeft <= 10 && timeLeft > 0 && duration > 60 && (
-                <div className="mt-3 text-xs text-orange-700 font-semibold bg-orange-50 px-2 py-1 rounded-md border border-orange-200">
+                <div className="mt-3 text-xs text-gray-800 font-semibold bg-gray-100 px-2 py-1 rounded-md border border-gray-300">
                     ⚠️ 10s left!
                 </div>
             )}
 
             {timeLeft <= 5 && timeLeft > 0 && duration <= 60 && (
-                <div className="mt-3 text-xs text-red-700 font-semibold animate-pulse bg-red-50 px-2 py-1 rounded-md border border-red-200">
+                <div className="mt-3 text-xs text-gray-900 font-semibold animate-pulse bg-gray-200 px-2 py-1 rounded-md border border-gray-400">
                     ⚠️ 5s left!
                 </div>
             )}
 
             {timeLeft === 0 && (
-                <div className="mt-3 text-xs text-red-700 font-semibold bg-red-50 px-2 py-1 rounded-md border border-red-200">
+                <div className="mt-3 text-xs text-gray-900 font-semibold bg-gray-200 px-2 py-1 rounded-md border border-gray-400">
                     ⏰ Time's up!
                 </div>
             )}

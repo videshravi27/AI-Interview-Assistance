@@ -30,12 +30,23 @@ export const testLocalStoragePersistence = () => {
       const persistData = JSON.parse(persistKey);
       console.log("✅ Redux persist data found:", persistData);
 
-      if (persistData.candidates) {
-        const candidates = JSON.parse(persistData.candidates);
-        console.log(
-          `✅ Found ${candidates.candidates?.length || 0} candidates in persist`
-        );
+      // Handle both old and new formats
+      let candidates = [];
+      if (typeof persistData === "string") {
+        // New format: direct state
+        const state = JSON.parse(persistData);
+        candidates = state.candidates || [];
+      } else if (persistData.candidates) {
+        // Old format: nested structure
+        if (typeof persistData.candidates === "string") {
+          const candidatesState = JSON.parse(persistData.candidates);
+          candidates = candidatesState.candidates || candidatesState;
+        } else {
+          candidates = persistData.candidates;
+        }
       }
+
+      console.log(`✅ Found ${candidates.length || 0} candidates in persist`);
     } catch (error) {
       console.log("❌ Error parsing Redux persist data:", error);
     }
@@ -69,23 +80,14 @@ export const testLocalStoragePersistence = () => {
 export const forceSaveReduxState = (store) => {
   try {
     const state = store.getState();
+    console.log("Current Redux state:", state);
 
-    // Save using Redux persist format
-    const persistData = {
-      candidates: JSON.stringify(state.candidates),
-      _persist: {
-        version: 2,
-        rehydrated: true,
-      },
-    };
+    // First trigger the persist flush
+    if (window.__REDUX_PERSIST_FLUSH__) {
+      window.__REDUX_PERSIST_FLUSH__();
+    }
 
-    localStorage.setItem(
-      "persist:ai-interview-app",
-      JSON.stringify(persistData)
-    );
-    console.log("✅ Forced Redux state save completed");
-
-    // Also save individual completed interviews
+    // Also save individual completed interviews as backup
     const completedCandidates =
       state.candidates?.candidates?.filter((c) => c.status === "completed") ||
       [];
@@ -93,9 +95,10 @@ export const forceSaveReduxState = (store) => {
     completedCandidates.forEach((candidate) => {
       const key = `completed-interview-${candidate.id}`;
       localStorage.setItem(key, JSON.stringify(candidate));
-      console.log(`✅ Saved completed interview: ${candidate.name}`);
+      console.log(`✅ Saved completed interview backup: ${candidate.name}`);
     });
 
+    console.log("✅ Forced Redux state save completed");
     return true;
   } catch (error) {
     console.error("❌ Error in force save:", error);

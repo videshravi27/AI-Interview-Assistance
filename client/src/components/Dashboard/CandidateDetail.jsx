@@ -8,7 +8,7 @@ const CandidateDetail = () => {
 
     if (!candidate) {
         return (
-            <div className="candidate-detail bg-white rounded-xl shadow-lg border-2 p-12">
+            <div className="candidate-detail bg-white rounded-xl shadow-sm border border-gray-200 p-12">
                 <div className="text-center text-gray-500">
                     <div className="text-8xl mb-6">👤</div>
                     <h3 className="text-2xl font-semibold mb-3">No Candidate Selected</h3>
@@ -21,11 +21,11 @@ const CandidateDetail = () => {
     const getStatusColor = (status) => {
         switch (status) {
             case 'completed':
-                return 'bg-green-100 text-green-800';
+                return 'bg-gray-100 text-gray-800';
             case 'interview':
-                return 'bg-blue-100 text-blue-800';
+                return 'bg-gray-200 text-gray-900';
             case 'paused':
-                return 'bg-yellow-100 text-yellow-800';
+                return 'bg-gray-50 text-gray-700';
             case 'info_collection':
                 return 'bg-gray-100 text-gray-800';
             default:
@@ -51,11 +51,11 @@ const CandidateDetail = () => {
     const getDifficultyColor = (difficulty) => {
         switch (difficulty) {
             case 'Easy':
-                return 'bg-green-100 text-green-800';
+                return 'bg-gray-100 text-gray-700';
             case 'Medium':
-                return 'bg-yellow-100 text-yellow-800';
+                return 'bg-gray-200 text-gray-800';
             case 'Hard':
-                return 'bg-red-100 text-red-800';
+                return 'bg-gray-800 text-white';
             default:
                 return 'bg-gray-100 text-gray-800';
         }
@@ -74,24 +74,24 @@ const CandidateDetail = () => {
     const getRatingColor = (rating) => {
         switch (rating?.toLowerCase()) {
             case 'excellent':
-                return 'text-green-600 bg-green-50 border-green-200';
+                return 'text-gray-900 bg-gray-100 border-gray-300';
             case 'good':
-                return 'text-blue-600 bg-blue-50 border-blue-200';
+                return 'text-gray-800 bg-gray-50 border-gray-200';
             case 'average':
-                return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+                return 'text-gray-700 bg-gray-50 border-gray-200';
             case 'below average':
-                return 'text-orange-600 bg-orange-50 border-orange-200';
+                return 'text-gray-600 bg-gray-50 border-gray-200';
             case 'poor':
-                return 'text-red-600 bg-red-50 border-red-200';
+                return 'text-gray-500 bg-gray-50 border-gray-200';
             default:
                 return 'text-gray-600 bg-gray-50 border-gray-200';
         }
     };
 
     return (
-        <div className="candidate-detail bg-white rounded-xl shadow-lg border-2">
+        <div className="candidate-detail bg-white rounded-xl shadow-sm border border-gray-200">
             {/* Header */}
-            <div className="p-8 border-b-2 border-gray-200">
+            <div className="p-8 border-b border-gray-200">
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-3xl font-bold text-gray-900">
                         {candidate.name || 'Unnamed Candidate'}
@@ -284,33 +284,6 @@ const CandidateDetail = () => {
                                 </ul>
                             </div>
                         )}
-                    </div>
-                </div>
-            )}
-
-            {/* Chat History */}
-            {candidate.chatHistory && candidate.chatHistory.length > 0 && (
-                <div className="p-8 border-t-2 border-gray-200">
-                    <h3 className="text-2xl font-bold mb-6">Chat History</h3>
-
-                    <div className="bg-gray-50 rounded-xl p-6 max-h-[500px] overflow-y-auto border-2">
-                        <div className="space-y-4">
-                            {candidate.chatHistory.map((message) => (
-                                <div key={message.id} className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-lg p-4 rounded-xl text-base ${message.sender === 'user'
-                                        ? 'bg-blue-500 text-white'
-                                        : 'bg-white border-2 text-gray-900'
-                                        }`}>
-                                        <div className="font-semibold mb-2 text-sm opacity-75">
-                                            {message.sender === 'user' ? 'Candidate' : 'AI Interviewer'} • {formatDate(message.timestamp)}
-                                        </div>
-                                        <div dangerouslySetInnerHTML={{
-                                            __html: message.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br />')
-                                        }} />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
                     </div>
                 </div>
             )}
