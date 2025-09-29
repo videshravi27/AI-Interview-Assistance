@@ -117,14 +117,16 @@ const ChatWindow = () => {
 
         // Add initial welcome message
         setTimeout(() => {
-            dispatch(addChatMessage({
-                candidateId: activeCandidate.id,
-                message: {
-                    type: 'system',
-                    text: `Perfect! I've processed your resume. Ready to start your interview, ${candidateInfo.name}?`,
-                    sender: 'assistant'
-                }
-            }));
+            if (activeCandidate) {
+                dispatch(addChatMessage({
+                    candidateId: activeCandidate.id,
+                    message: {
+                        type: 'system',
+                        text: `Perfect! I've processed your resume. Ready to start your interview, ${candidateInfo.name}?`,
+                        sender: 'assistant'
+                    }
+                }));
+            }
         }, 500);
     };
 
@@ -503,8 +505,8 @@ const ChatWindow = () => {
                                         </div>
                                     </div>
                                     <div className={`px-2 lg:px-3 py-1 rounded-full text-xs font-bold ${currentQuestion.difficulty === 'Easy' ? 'bg-gray-100 text-gray-700' :
-                                            currentQuestion.difficulty === 'Medium' ? 'bg-gray-200 text-gray-800' :
-                                                'bg-gray-800 text-white'
+                                        currentQuestion.difficulty === 'Medium' ? 'bg-gray-200 text-gray-800' :
+                                            'bg-gray-800 text-white'
                                         }`}>
                                         {currentQuestion.difficulty}
                                     </div>

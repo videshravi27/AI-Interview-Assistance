@@ -11,7 +11,7 @@ if (!API_KEY) {
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 // Initialize the model
-const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
 // Track recently used questions to avoid immediate repeats
 const recentQuestionCache = new Map();
@@ -45,18 +45,20 @@ const getCacheKey = (resumeData) => {
  * Generate interview questions using Gemini AI based on resume content
  */
 export const generateInterviewQuestions = async (resumeData = null) => {
+  // Generate cache key and variables that need to be accessible in catch block
+  const cacheKey = getCacheKey(resumeData);
+  let recentQuestions = [];
+  const randomSeed = Math.floor(Math.random() * 10000);
+
   try {
     // Clean old cache entries
     cleanCache();
 
-    // Generate cache key and check for recent questions
-    const cacheKey = getCacheKey(resumeData);
-    const recentQuestions = JSON.parse(
+    // Check for recent questions
+    recentQuestions = JSON.parse(
       localStorage.getItem(`recent_questions_${cacheKey}`) || "[]"
     );
 
-    // Add randomization seed to ensure different questions each time
-    const randomSeed = Math.floor(Math.random() * 10000);
     const timestamp = Date.now();
 
     // Extract key information from resume if available
@@ -1222,6 +1224,17 @@ const getPersonalizedFallbackQuestions = (
     ];
   }
 
+  // Simple similarity calculation function
+  const calculateSimilarity = (str1, str2) => {
+    const words1 = str1.split(" ").filter((w) => w.length > 3);
+    const words2 = str2.split(" ").filter((w) => w.length > 3);
+
+    if (words1.length === 0 || words2.length === 0) return 0;
+
+    const commonWords = words1.filter((word) => words2.includes(word));
+    return commonWords.length / Math.max(words1.length, words2.length);
+  };
+
   // Collect all available questions from pools
   const allPoolQuestions = Object.values(questionPools).flat();
 
@@ -1234,17 +1247,6 @@ const getPersonalizedFallbackQuestions = (
       return similarity > 0.6; // 60% similarity threshold
     });
   });
-
-  // Simple similarity calculation function
-  const calculateSimilarity = (str1, str2) => {
-    const words1 = str1.split(" ").filter((w) => w.length > 3);
-    const words2 = str2.split(" ").filter((w) => w.length > 3);
-
-    if (words1.length === 0 || words2.length === 0) return 0;
-
-    const commonWords = words1.filter((word) => words2.includes(word));
-    return commonWords.length / Math.max(words1.length, words2.length);
-  };
 
   // If we have filtered questions, use them; otherwise use all pool questions
   const availableQuestions =
