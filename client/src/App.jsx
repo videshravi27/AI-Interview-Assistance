@@ -90,13 +90,13 @@ const App = () => {
                 Save
               </button>
 
-              <button
+              {/* <button
                 className="px-6 py-3 text-sm font-semibold rounded-md bg-gray-600 text-white hover:bg-gray-500 transition-all duration-300"
                 onClick={() => debugLocalStorageState()}
                 title="Debug localStorage"
               >
                 Debug
-              </button>
+              </button> */}
             </div>
           </header>
 

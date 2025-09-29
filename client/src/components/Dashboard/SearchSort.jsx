@@ -73,7 +73,7 @@ const SearchSort = () => {
                         Score {getSortIcon('score')}
                     </button>
 
-                    <button
+                    {/* <button
                         onClick={() => handleSortChange('name')}
                         className={`px-6 py-3 text-base rounded-lg border transition-colors font-medium ${sortBy === 'name'
                             ? 'bg-gray-100 border-gray-300 text-gray-800'
@@ -81,7 +81,7 @@ const SearchSort = () => {
                             }`}
                     >
                         Name {getSortIcon('name')}
-                    </button>
+                    </button> */}
 
                     <button
                         onClick={() => handleSortChange('date')}
@@ -93,7 +93,7 @@ const SearchSort = () => {
                         Date {getSortIcon('date')}
                     </button>
 
-                    <button
+                    {/* <button
                         onClick={() => handleSortChange('status')}
                         className={`px-6 py-3 text-base rounded-lg border transition-colors font-medium ${sortBy === 'status'
                             ? 'bg-gray-100 border-gray-300 text-gray-800'
@@ -101,7 +101,7 @@ const SearchSort = () => {
                             }`}
                     >
                         Status {getSortIcon('status')}
-                    </button>
+                    </button> */}
                 </div>
             </div>
 

@@ -161,12 +161,20 @@ export const generateInterviewQuestions = async (resumeData = null) => {
     } catch {
       console.error("Failed to parse AI response as JSON:", text);
       // Generate personalized fallback questions
-      return getPersonalizedFallbackQuestions(resumeData);
+      return getPersonalizedFallbackQuestions(
+        resumeData,
+        randomSeed,
+        recentQuestions
+      );
     }
   } catch (error) {
     console.error("Error generating questions with Gemini:", error);
     // Return personalized fallback questions if API fails
-    return getPersonalizedFallbackQuestions(resumeData);
+    return getPersonalizedFallbackQuestions(
+      resumeData,
+      randomSeed,
+      recentQuestions
+    );
   }
 };
 
@@ -299,17 +307,23 @@ Base the assessment on technical accuracy, problem-solving approach, and communi
 };
 
 // Personalized fallback questions based on resume data with randomization
-const getPersonalizedFallbackQuestions = (resumeData) => {
-  // Add randomization to ensure different questions each time
-  const randomSeed = Math.floor(Math.random() * 10000);
-  const timestamp = Date.now();
-
-  // Get recent questions to avoid repeats
-  const cacheKey = getCacheKey(resumeData);
-  const recentQuestions = JSON.parse(
-    localStorage.getItem(`recent_questions_${cacheKey}`) || "[]"
+const getPersonalizedFallbackQuestions = (
+  resumeData,
+  randomSeed = Math.random() * 10000,
+  recentQuestions = []
+) => {
+  console.log(
+    "Generating personalized fallback questions with seed:",
+    randomSeed
   );
-  const recentQuestionTexts = recentQuestions.map((q) =>
+
+  // Get recent question texts to avoid repeats
+  const cacheKey = getCacheKey(resumeData);
+  const allRecentQuestions = [
+    ...recentQuestions,
+    ...JSON.parse(localStorage.getItem(`recent_questions_${cacheKey}`) || "[]"),
+  ];
+  const recentQuestionTexts = allRecentQuestions.map((q) =>
     q.question.toLowerCase()
   );
 
@@ -444,12 +458,238 @@ const getPersonalizedFallbackQuestions = (resumeData) => {
           "Server Components render on the server, reducing bundle size and improving initial page load performance.",
         category: "React Server Components",
       },
+      {
+        id: `q_react_7_${randomSeed}`,
+        question:
+          "What is the difference between controlled and uncontrolled components?",
+        difficulty: "Easy",
+        time: 20,
+        options: [
+          "Controlled components use refs",
+          "Controlled components have state managed by React",
+          "There's no difference",
+          "Uncontrolled components are faster",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "Controlled components have their state managed by React through props and callbacks, while uncontrolled components manage their own state internally.",
+        category: "React Components",
+      },
+      {
+        id: `q_react_8_${randomSeed}`,
+        question: "What is React's Context API used for?",
+        difficulty: "Easy",
+        time: 20,
+        options: [
+          "Database connections",
+          "Sharing state across components without prop drilling",
+          "Component styling",
+          "Event handling",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "Context API allows sharing state across components without passing props through intermediate components (prop drilling).",
+        category: "React State Management",
+      },
+      {
+        id: `q_react_9_${randomSeed}`,
+        question: "How do you handle errors in React components?",
+        difficulty: "Medium",
+        time: 60,
+        options: [
+          "Try-catch in render method",
+          "Error boundaries",
+          "Console.log statements",
+          "Ignore them",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "Error boundaries are React components that catch JavaScript errors anywhere in the child component tree and display fallback UI.",
+        category: "React Error Handling",
+      },
+      {
+        id: `q_react_10_${randomSeed}`,
+        question: "What is the virtual DOM in React?",
+        difficulty: "Medium",
+        time: 60,
+        options: [
+          "A real DOM copy",
+          "An in-memory representation of real DOM",
+          "A CSS framework",
+          "A database",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "Virtual DOM is a JavaScript representation of the actual DOM kept in memory and synced with the real DOM through reconciliation.",
+        category: "React Core Concepts",
+      },
+      {
+        id: `q_react_11_${randomSeed}`,
+        question: "How do you optimize React bundle size?",
+        difficulty: "Medium",
+        time: 60,
+        options: [
+          "Add more dependencies",
+          "Use code splitting and lazy loading",
+          "Inline all CSS",
+          "Avoid using hooks",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "Code splitting with React.lazy() and Suspense, along with proper bundling techniques, helps reduce bundle size.",
+        category: "React Optimization",
+      },
+      {
+        id: `q_react_12_${randomSeed}`,
+        question: "What is the purpose of React keys in lists?",
+        difficulty: "Medium",
+        time: 60,
+        options: [
+          "Styling list items",
+          "Helping React identify changed items",
+          "Sorting lists",
+          "Security",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "Keys help React identify which items have changed, been added, or removed, improving rendering performance.",
+        category: "React Lists",
+      },
+      {
+        id: `q_react_13_${randomSeed}`,
+        question: "How do you share logic between React components?",
+        difficulty: "Hard",
+        time: 120,
+        options: [
+          "Copy-paste code",
+          "Custom hooks or higher-order components",
+          "Global variables",
+          "Inline functions",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "Custom hooks and higher-order components (HOCs) allow sharing stateful logic between components.",
+        category: "React Patterns",
+      },
+      {
+        id: `q_react_14_${randomSeed}`,
+        question: "What are React portals used for?",
+        difficulty: "Hard",
+        time: 120,
+        options: [
+          "Data fetching",
+          "Rendering children outside parent DOM hierarchy",
+          "State management",
+          "Event handling",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "Portals provide a way to render children into a DOM node outside of the parent component's DOM hierarchy.",
+        category: "React Advanced",
+      },
+      {
+        id: `q_react_15_${randomSeed}`,
+        question: "What is the difference between useMemo and useCallback?",
+        difficulty: "Hard",
+        time: 120,
+        options: [
+          "useMemo memoizes values, useCallback memoizes functions",
+          "They are exactly the same",
+          "useMemo is for components, useCallback is for hooks",
+          "useCallback is deprecated",
+        ],
+        correctAnswer: 0,
+        explanation:
+          "useMemo memoizes computed values to avoid expensive recalculations, while useCallback memoizes functions to prevent unnecessary re-renders.",
+        category: "React Performance",
+      },
+      {
+        id: `q_react_16_${randomSeed}`,
+        question: "How do you implement React Server-Side Rendering (SSR)?",
+        difficulty: "Hard",
+        time: 120,
+        options: [
+          "SSR is automatic in React",
+          "Use frameworks like Next.js or implement with ReactDOMServer",
+          "SSR is not possible with React",
+          "Only use client-side rendering",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "SSR can be implemented using frameworks like Next.js or manually with ReactDOMServer.renderToString().",
+        category: "React SSR",
+      },
+      {
+        id: `q_react_17_${randomSeed}`,
+        question: "What is the purpose of React.StrictMode?",
+        difficulty: "Medium",
+        time: 60,
+        options: [
+          "To make React faster",
+          "To highlight potential problems in development",
+          "To enable production mode",
+          "To disable warnings",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "StrictMode activates additional checks and warnings for its descendants in development mode to help identify potential problems.",
+        category: "React Development",
+      },
+      {
+        id: `q_react_18_${randomSeed}`,
+        question:
+          "How do you handle side effects in React functional components?",
+        difficulty: "Easy",
+        time: 20,
+        options: [
+          "Use class methods",
+          "Use useEffect hook",
+          "Use useState hook",
+          "Side effects are not allowed",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "useEffect hook is used to handle side effects like data fetching, subscriptions, or DOM manipulation in functional components.",
+        category: "React Hooks",
+      },
+      {
+        id: `q_react_19_${randomSeed}`,
+        question: "What is prop drilling and how can you avoid it?",
+        difficulty: "Medium",
+        time: 60,
+        options: [
+          "Prop drilling is a React feature",
+          "Passing props through multiple component levels; avoid with Context API or state management",
+          "Prop drilling improves performance",
+          "It's not possible to avoid prop drilling",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "Prop drilling is passing props through intermediate components that don't need them. It can be avoided using Context API, Redux, or other state management solutions.",
+        category: "React State Management",
+      },
+      {
+        id: `q_react_20_${randomSeed}`,
+        question: "What are React Fragments and why use them?",
+        difficulty: "Easy",
+        time: 20,
+        options: [
+          "React Fragments are a component type",
+          "They group multiple elements without adding extra DOM nodes",
+          "They are used for styling",
+          "They handle errors",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "React Fragments let you group a list of children without adding extra nodes to the DOM, keeping the HTML clean.",
+        category: "React JSX",
+      },
     ];
 
-    // Randomly select 2 questions from React pool
+    // Randomly select 3 questions from React pool for better variety
     const reactQuestions = questionPools.react
       .sort(() => Math.random() - 0.5)
-      .slice(0, 2);
+      .slice(0, 3);
     questions.push(...reactQuestions);
   }
 
@@ -554,12 +794,157 @@ const getPersonalizedFallbackQuestions = (resumeData) => {
           "Streams are objects for handling flowing data efficiently, especially useful for processing large files without loading everything into memory.",
         category: "Node.js Streams",
       },
+      {
+        id: `q_node_7_${randomSeed}`,
+        question: "How do you handle environment variables in Node.js?",
+        difficulty: "Easy",
+        time: 20,
+        options: [
+          "Hard-code them in files",
+          "Use process.env or dotenv package",
+          "Store in database",
+          "Not possible in Node.js",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "Environment variables can be accessed via process.env, often managed with the dotenv package for local development.",
+        category: "Node.js Configuration",
+      },
+      {
+        id: `q_node_8_${randomSeed}`,
+        question: "What is clustering in Node.js?",
+        difficulty: "Medium",
+        time: 60,
+        options: [
+          "Database clustering",
+          "Running multiple Node.js processes to utilize multiple CPU cores",
+          "Code organization",
+          "Memory management",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "Clustering allows creation of child processes that share the same server port, utilizing multiple CPU cores.",
+        category: "Node.js Scaling",
+      },
+      {
+        id: `q_node_9_${randomSeed}`,
+        question: "How do you handle errors in Node.js?",
+        difficulty: "Medium",
+        time: 60,
+        options: [
+          "Ignore them",
+          "Try-catch blocks and error-first callbacks",
+          "Only use console.log",
+          "Restart the server",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "Node.js uses error-first callbacks, try-catch for synchronous code, and .catch() for promises to handle errors.",
+        category: "Node.js Error Handling",
+      },
+      {
+        id: `q_node_10_${randomSeed}`,
+        question: "What is the purpose of the package.json file?",
+        difficulty: "Easy",
+        time: 20,
+        options: [
+          "To store user data",
+          "To define project metadata and dependencies",
+          "To configure database connections",
+          "To handle error logging",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "package.json contains project metadata, dependencies, scripts, and configuration for Node.js projects.",
+        category: "Node.js Project Management",
+      },
+      {
+        id: `q_node_11_${randomSeed}`,
+        question: "How do you secure a Node.js application?",
+        difficulty: "Hard",
+        time: 120,
+        options: [
+          "No security needed",
+          "Use HTTPS, validate inputs, use helmet.js",
+          "Only use HTTP",
+          "Security is automatic",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "Security involves HTTPS, input validation, security headers (helmet.js), authentication, and authorization.",
+        category: "Node.js Security",
+      },
+      {
+        id: `q_node_12_${randomSeed}`,
+        question:
+          "What is the difference between spawn() and exec() in Node.js?",
+        difficulty: "Hard",
+        time: 120,
+        options: [
+          "spawn() buffers output, exec() doesn't",
+          "spawn() streams data, exec() buffers entire output",
+          "They are identical",
+          "exec() is deprecated",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "spawn() returns a stream for real-time data handling, while exec() buffers the entire output and returns it at once.",
+        category: "Node.js Child Processes",
+      },
+      {
+        id: `q_node_13_${randomSeed}`,
+        question: "How do you handle file uploads in Express.js?",
+        difficulty: "Medium",
+        time: 60,
+        options: [
+          "Files cannot be uploaded in Express",
+          "Use middleware like multer",
+          "Only use GET requests",
+          "Store files in memory only",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "Multer is a popular middleware for handling multipart/form-data and file uploads in Express.js applications.",
+        category: "Express File Handling",
+      },
+      {
+        id: `q_node_14_${randomSeed}`,
+        question: "What is the purpose of process.nextTick() in Node.js?",
+        difficulty: "Hard",
+        time: 120,
+        options: [
+          "To restart the process",
+          "To schedule a callback to execute in the next iteration of the event loop",
+          "To create a new process",
+          "To handle errors",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "process.nextTick() schedules a callback function to be invoked in the next iteration of the Event Loop, before any other I/O events.",
+        category: "Node.js Event Loop",
+      },
+      {
+        id: `q_node_15_${randomSeed}`,
+        question: "How do you implement rate limiting in Express.js?",
+        difficulty: "Medium",
+        time: 60,
+        options: [
+          "Rate limiting is not possible",
+          "Use middleware like express-rate-limit",
+          "Only use HTTPS",
+          "Restart server frequently",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "express-rate-limit is a middleware that limits repeated requests to endpoints, helping prevent abuse and DoS attacks.",
+        category: "Express Security",
+      },
     ];
 
-    // Randomly select 2 questions from Node pool
+    // Randomly select 3 questions from Node pool for better variety
     const nodeQuestions = questionPools.node
       .sort(() => Math.random() - 0.5)
-      .slice(0, 2);
+      .slice(0, 3);
     questions.push(...nodeQuestions);
   }
 
@@ -673,19 +1058,193 @@ const getPersonalizedFallbackQuestions = (resumeData) => {
           "A closure gives you access to an outer function's scope from an inner function, even after the outer function returns.",
         category: "JavaScript Advanced",
       },
+      {
+        id: `q_js_3_${randomSeed}`,
+        question: "What is event delegation in JavaScript?",
+        difficulty: "Medium",
+        time: 60,
+        options: [
+          "Creating custom events",
+          "Using event bubbling to handle events on parent elements",
+          "Removing events",
+          "Event prevention",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "Event delegation uses event bubbling to handle events for multiple child elements by attaching a single event listener to their parent.",
+        category: "JavaScript Events",
+      },
+      {
+        id: `q_js_4_${randomSeed}`,
+        question: "What is the difference between map() and forEach()?",
+        difficulty: "Easy",
+        time: 20,
+        options: [
+          "No difference",
+          "map() returns new array, forEach() doesn't",
+          "forEach() is faster",
+          "map() modifies original array",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "map() creates and returns a new array with transformed elements, while forEach() executes a function for each element without returning anything.",
+        category: "JavaScript Array Methods",
+      },
+      {
+        id: `q_js_5_${randomSeed}`,
+        question: "How do you deep clone an object in JavaScript?",
+        difficulty: "Medium",
+        time: 60,
+        options: [
+          "Object.assign()",
+          "JSON.parse(JSON.stringify()) or structuredClone()",
+          "Spread operator",
+          "Simple assignment",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "Deep cloning can be done with JSON.parse(JSON.stringify()) for simple objects or structuredClone() for complex objects.",
+        category: "JavaScript Objects",
+      },
+      {
+        id: `q_js_6_${randomSeed}`,
+        question: "What is a Promise in JavaScript?",
+        difficulty: "Medium",
+        time: 60,
+        options: [
+          "A function type",
+          "An object representing eventual completion of async operation",
+          "A variable declaration",
+          "A loop structure",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "A Promise represents the eventual completion (or failure) of an asynchronous operation and its resulting value.",
+        category: "JavaScript Async",
+      },
+      {
+        id: `q_js_7_${randomSeed}`,
+        question: "What is destructuring in JavaScript?",
+        difficulty: "Easy",
+        time: 20,
+        options: [
+          "Deleting objects",
+          "Extracting values from arrays/objects into variables",
+          "Creating objects",
+          "Error handling",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "Destructuring allows unpacking values from arrays or properties from objects into distinct variables using a concise syntax.",
+        category: "JavaScript ES6+",
+      },
+      {
+        id: `q_js_8_${randomSeed}`,
+        question: "What is the difference between let, const, and var?",
+        difficulty: "Easy",
+        time: 20,
+        options: [
+          "No difference",
+          "Different scoping rules and mutability",
+          "Different performance",
+          "Different browsers support",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "var has function scope, let and const have block scope. const cannot be reassigned after declaration.",
+        category: "JavaScript Variables",
+      },
+      {
+        id: `q_js_9_${randomSeed}`,
+        question: "How do you handle asynchronous operations in JavaScript?",
+        difficulty: "Medium",
+        time: 60,
+        options: [
+          "Only use setTimeout",
+          "Callbacks, Promises, async/await",
+          "Synchronous code only",
+          "Not possible",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "Asynchronous operations can be handled using callbacks, Promises, or modern async/await syntax.",
+        category: "JavaScript Async",
+      },
+      {
+        id: `q_js_10_${randomSeed}`,
+        question: "What is the Event Loop in JavaScript?",
+        difficulty: "Hard",
+        time: 120,
+        options: [
+          "A database loop",
+          "Mechanism for handling asynchronous operations",
+          "A for loop",
+          "Error handling system",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "The Event Loop allows JavaScript to perform non-blocking operations by managing the execution of callbacks and promises.",
+        category: "JavaScript Advanced",
+      },
+      {
+        id: `q_js_11_${randomSeed}`,
+        question:
+          "What are arrow functions and how do they differ from regular functions?",
+        difficulty: "Medium",
+        time: 60,
+        options: [
+          "They are exactly the same",
+          "Arrow functions have lexical 'this' binding and are more concise",
+          "Arrow functions are faster",
+          "Arrow functions cannot take parameters",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "Arrow functions provide a more concise syntax and do not have their own 'this' context, inheriting it from the enclosing scope.",
+        category: "JavaScript Functions",
+      },
+      {
+        id: `q_js_12_${randomSeed}`,
+        question: "What is hoisting in JavaScript?",
+        difficulty: "Medium",
+        time: 60,
+        options: [
+          "Moving code to the server",
+          "Moving variable and function declarations to the top of their scope",
+          "Optimizing performance",
+          "Error handling mechanism",
+        ],
+        correctAnswer: 1,
+        explanation:
+          "Hoisting is JavaScript's behavior of moving variable and function declarations to the top of their containing scope during compilation.",
+        category: "JavaScript Fundamentals",
+      },
     ];
   }
 
   // Collect all available questions from pools
   const allPoolQuestions = Object.values(questionPools).flat();
 
-  // Filter out questions that were recently asked
-  const filteredQuestions = allPoolQuestions.filter(
-    (q) =>
-      !recentQuestionTexts.some((recent) =>
-        recent.toLowerCase().includes(q.question.toLowerCase().substring(0, 30))
-      )
-  );
+  // Advanced filtering to avoid recent questions with better similarity detection
+  const filteredQuestions = allPoolQuestions.filter((q) => {
+    // Check if question is too similar to recent ones
+    const questionLower = q.question.toLowerCase();
+    return !recentQuestionTexts.some((recent) => {
+      const similarity = calculateSimilarity(questionLower, recent);
+      return similarity > 0.6; // 60% similarity threshold
+    });
+  });
+
+  // Simple similarity calculation function
+  const calculateSimilarity = (str1, str2) => {
+    const words1 = str1.split(" ").filter((w) => w.length > 3);
+    const words2 = str2.split(" ").filter((w) => w.length > 3);
+
+    if (words1.length === 0 || words2.length === 0) return 0;
+
+    const commonWords = words1.filter((word) => words2.includes(word));
+    return commonWords.length / Math.max(words1.length, words2.length);
+  };
 
   // If we have filtered questions, use them; otherwise use all pool questions
   const availableQuestions =
@@ -721,20 +1280,27 @@ const getPersonalizedFallbackQuestions = (resumeData) => {
     );
   }
 
-  // Ensure we have exactly 6 questions with proper difficulty distribution
-  const finalQuestions = questions.slice(0, 6).map((q, index) => {
-    // Adjust difficulty to ensure we have 2 easy, 2 medium, 2 hard
-    if (index < 2) {
-      q.difficulty = "Easy";
-      q.time = 20;
-    } else if (index < 4) {
-      q.difficulty = "Medium";
-      q.time = 60;
-    } else {
-      q.difficulty = "Hard";
-      q.time = 120;
-    }
+  // Smart selection for better difficulty distribution
+  let finalQuestions = [];
 
+  // Try to get 2 questions from each difficulty level
+  const easyQuestions = questions.filter((q) => q.difficulty === "Easy");
+  const mediumQuestions = questions.filter((q) => q.difficulty === "Medium");
+  const hardQuestions = questions.filter((q) => q.difficulty === "Hard");
+
+  // Select 2 from each difficulty if available, otherwise fill proportionally
+  finalQuestions.push(...easyQuestions.slice(0, 2));
+  finalQuestions.push(...mediumQuestions.slice(0, 2));
+  finalQuestions.push(...hardQuestions.slice(0, 2));
+
+  // If we don't have enough questions, fill with remaining
+  if (finalQuestions.length < 6) {
+    const remaining = questions.filter((q) => !finalQuestions.includes(q));
+    finalQuestions.push(...remaining.slice(0, 6 - finalQuestions.length));
+  }
+
+  // Ensure exactly 6 questions and assign proper properties
+  finalQuestions = finalQuestions.slice(0, 6).map((q, index) => {
     // Add required fields for the interview system
     return {
       ...q,
@@ -754,8 +1320,8 @@ const getPersonalizedFallbackQuestions = (resumeData) => {
     }));
     const updatedRecentQuestions = [
       ...questionsToStore,
-      ...recentQuestions,
-    ].slice(0, 20); // Keep last 20
+      ...allRecentQuestions,
+    ].slice(0, 50); // Keep last 50 questions for better variety tracking
     localStorage.setItem(
       `recent_questions_${cacheKey}`,
       JSON.stringify(updatedRecentQuestions)
