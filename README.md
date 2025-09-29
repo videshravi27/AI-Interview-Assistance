@@ -2,6 +2,10 @@
 
 A modern React application that serves as an intelligent interview platform with AI-powered question generation and automated scoring. The app provides a seamless experience for both candidates (interviewees) and recruiters (interviewers) with real-time synchronization and local data persistence.
 
+## Video Reference
+
+- https://www.loom.com/share/bd4508e7bc304fb087ef95ec79d27ff4?sid=07b753e9-8f25-4955-86f2-23d3bf10ad89
+
 ## ✨ Features
 
 ### 🎯 Core Functionality
@@ -101,3 +105,4 @@ Give a ⭐️ if this project helped you!
 ---
 
 **Built by Videsh**
+
