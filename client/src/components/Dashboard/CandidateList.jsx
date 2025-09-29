@@ -56,6 +56,7 @@ const CandidateList = () => {
             candidate.name?.toLowerCase().includes(searchLower) ||
             candidate.email?.toLowerCase().includes(searchLower) ||
             candidate.phone?.includes(searchTerm) ||
+            candidate.interviewName?.toLowerCase().includes(searchLower) ||
             candidate.summary?.overallRating?.toLowerCase().includes(searchLower)
         );
     });
@@ -208,9 +209,16 @@ const CandidateList = () => {
                         <div className="flex items-center justify-between">
                             <div className="flex-1">
                                 <div className="flex items-center justify-between mb-3">
-                                    <h3 className="text-xl font-semibold text-gray-900">
-                                        {candidate.name || 'Unnamed Candidate'}
-                                    </h3>
+                                    <div>
+                                        <h3 className="text-xl font-semibold text-gray-900">
+                                            {candidate.name || 'Unnamed Candidate'}
+                                        </h3>
+                                        {candidate.interviewName && (
+                                            <p className="text-sm font-medium text-gray-600 mt-1">
+                                                📝 {candidate.interviewName}
+                                            </p>
+                                        )}
+                                    </div>
                                     <button
                                         onClick={(e) => handleDeleteCandidate(e, candidate.id)}
                                         className="text-gray-400 hover:text-red-500 transition-colors text-xl"

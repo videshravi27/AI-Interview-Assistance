@@ -93,9 +93,16 @@ const CandidateDetail = () => {
             {/* Header */}
             <div className="p-8 border-b border-gray-200">
                 <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-3xl font-bold text-gray-900">
-                        {candidate.name || 'Unnamed Candidate'}
-                    </h2>
+                    <div>
+                        <h2 className="text-3xl font-bold text-gray-900">
+                            {candidate.interviewName}
+                        </h2>
+                        {candidate.interviewName && (
+                            <p className="text-lg text-gray-600 mt-2 font-medium">
+                                Name: {candidate.name || 'Unnamed Candidate'}
+                            </p>
+                        )}
+                    </div>
                     <span className={`px-6 py-3 rounded-full text-base font-semibold ${getStatusColor(candidate.status)}`}>
                         {getStatusText(candidate.status)}
                     </span>

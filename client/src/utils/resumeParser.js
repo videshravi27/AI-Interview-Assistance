@@ -33,10 +33,108 @@ export const parseDOCX = async (file) => {
 const extractInfo = (text) => {
   const lowerText = text.toLowerCase();
 
-  // Basic contact information
-  const nameMatch =
-    text.match(/Name[:\s]+([A-Za-z\s]+)/i) ||
-    text.match(/^([A-Za-z\s]{2,30})/m); // First line often contains name
+  // Improved name extraction - look for name in multiple patterns
+  let nameMatch = null;
+
+  // Pattern 1: Look for "Name:" followed by text (but be more restrictive)
+  const namePatternMatch = text.match(
+    /Name[:\s]+([A-Za-z][A-Za-z\s\.]{1,40}?)(?:\n|$|Phone|Email|Contact|Address|\d)/i
+  );
+  if (namePatternMatch) {
+    const extractedName = namePatternMatch[1].trim();
+    const words = extractedName.split(" ").filter((w) => w.length > 0);
+    if (words.length >= 1 && words.length <= 4) {
+      nameMatch = [null, extractedName];
+    }
+  }
+
+  if (!nameMatch) {
+    // Pattern 2: Look at the first few lines for a name-like pattern
+    const lines = text.split("\n").filter((line) => line.trim().length > 0);
+
+    for (let i = 0; i < Math.min(5, lines.length); i++) {
+      const line = lines[i].trim();
+
+      // Skip lines that contain common non-name indicators
+      const skipPatterns = [
+        /resume/i,
+        /cv/i,
+        /curriculum/i,
+        /vitae/i,
+        /@/,
+        /\d{10}/,
+        /phone.*:/i,
+        /email.*:/i,
+        /address.*:/i,
+        /linkedin/i,
+        /github/i,
+        /portfolio/i,
+        /website/i,
+        /http/i,
+      ];
+
+      const shouldSkip = skipPatterns.some((pattern) => pattern.test(line));
+
+      if (!shouldSkip) {
+        // Check if line looks like a name - handle both title case and all caps
+        const titleCasePattern =
+          /^([A-Z][a-z]+(?:\s[A-Z][a-z]*\.?)*(?:\s[A-Z][a-z]+)*)$/;
+        const allCapsPattern = /^([A-Z]+(?:\s[A-Z]\.?)*(?:\s[A-Z]+)*)$/;
+
+        let match = line.match(titleCasePattern) || line.match(allCapsPattern);
+
+        if (match && match[1]) {
+          const words = match[1].split(" ").filter((w) => w.length > 0);
+          // Valid name: 1-4 words, each word 1-20 characters
+          if (
+            words.length >= 1 &&
+            words.length <= 4 &&
+            words.every((word) => word.length >= 1 && word.length <= 20)
+          ) {
+            nameMatch = [null, match[1]];
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  // Pattern 3: If still no match, try a more flexible approach on first non-empty lines
+  if (!nameMatch) {
+    const lines = text.split("\n").filter((line) => line.trim().length > 0);
+
+    for (let i = 0; i < Math.min(3, lines.length); i++) {
+      const line = lines[i].trim();
+
+      // Remove common prefixes and suffixes that might be attached to names
+      const cleanLine = line
+        .replace(/^(Name[:\s]*|Mr\.?\s*|Mrs\.?\s*|Ms\.?\s*|Dr\.?\s*)/i, "")
+        .replace(/(Phone|Email|Address|Contact).*$/i, "")
+        .replace(/[^\w\s\.]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      // Check if the cleaned line looks like a name
+      if (cleanLine.length >= 2 && cleanLine.length <= 50) {
+        const words = cleanLine.split(" ").filter((word) => word.length > 0);
+
+        // Should be 1-4 words, each word reasonable length
+        if (words.length >= 1 && words.length <= 4) {
+          const allWordsValid = words.every(
+            (word) =>
+              word.length >= 1 &&
+              word.length <= 20 &&
+              /^[A-Za-z\.]+$/.test(word) // Only letters and dots
+          );
+
+          if (allWordsValid) {
+            nameMatch = [null, cleanLine];
+            break;
+          }
+        }
+      }
+    }
+  }
   const emailMatch = text.match(
     /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/
   );

@@ -13,6 +13,8 @@ const ResumeUpload = ({ onComplete }) => {
     const [collectingInfo, setCollectingInfo] = useState(false);
     const [currentField, setCurrentField] = useState('');
     const [userInput, setUserInput] = useState('');
+    const [interviewName, setInterviewName] = useState('');
+    const [collectingInterviewName, setCollectingInterviewName] = useState(false);
 
     const dispatch = useDispatch();
 
@@ -56,21 +58,9 @@ const ResumeUpload = ({ onComplete }) => {
                 parsed = await parseDOCX(file);
             }
 
-            // Check for missing required fields
-            const missing = [];
-            if (!parsed.name || parsed.name.trim() === '') missing.push('name');
-            if (!parsed.email || parsed.email.trim() === '') missing.push('email');
-            if (!parsed.phone || parsed.phone.trim() === '') missing.push('phone');
-
-            if (missing.length > 0) {
-                setMissingFields(missing);
-                setCandidateInfo(parsed);
-                setCollectingInfo(true);
-                setCurrentField(missing[0]);
-            } else {
-                // All fields present, create candidate and complete
-                completeResumeProcess(parsed);
-            }
+            // First ask for interview name
+            setCandidateInfo(parsed);
+            setCollectingInterviewName(true);
         } catch (err) {
             console.error('Resume parsing error:', err);
             setError('Failed to parse resume. Please ensure the file is not corrupted and contains readable text.');
@@ -82,6 +72,37 @@ const ResumeUpload = ({ onComplete }) => {
     const handleFieldInput = (e) => {
         if (e.key === 'Enter') {
             submitFieldInput();
+        }
+    };
+
+    const handleInterviewNameInput = (e) => {
+        if (e.key === 'Enter') {
+            submitInterviewName();
+        }
+    };
+
+    const submitInterviewName = () => {
+        if (!interviewName.trim()) {
+            setError('Please enter a name for this interview session.');
+            return;
+        }
+
+        setCollectingInterviewName(false);
+        setError('');
+
+        // Check for missing required fields
+        const missing = [];
+        if (!candidateInfo.name || candidateInfo.name.trim() === '') missing.push('name');
+        if (!candidateInfo.email || candidateInfo.email.trim() === '') missing.push('email');
+        if (!candidateInfo.phone || candidateInfo.phone.trim() === '') missing.push('phone');
+
+        if (missing.length > 0) {
+            setMissingFields(missing);
+            setCollectingInfo(true);
+            setCurrentField(missing[0]);
+        } else {
+            // All fields present, create candidate and complete
+            completeResumeProcess(candidateInfo);
         }
     };
 
@@ -138,7 +159,8 @@ const ResumeUpload = ({ onComplete }) => {
             email: info.email,
             phone: info.phone,
             resumeText: info.resumeText || '',
-            fileName: file?.name || ''
+            fileName: file?.name || '',
+            interviewName: interviewName.trim()
         };
 
         dispatch(createCandidate(candidateData));
@@ -182,6 +204,55 @@ const ResumeUpload = ({ onComplete }) => {
             default: return `Enter your ${field}`;
         }
     };
+
+    if (collectingInterviewName) {
+        return (
+            <div className="h-full flex items-center justify-center">
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 max-w-lg w-full mx-6">
+                    <div className="mb-6">
+                        <h3 className="text-xl font-bold text-gray-800 mb-2">
+                            Name Your Interview
+                        </h3>
+                        <p className="text-gray-600">
+                            Give this interview session a memorable name for easy identification.
+                        </p>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                Interview Name *
+                            </label>
+                            <input
+                                type="text"
+                                value={interviewName}
+                                onChange={(e) => setInterviewName(e.target.value)}
+                                onKeyPress={handleInterviewNameInput}
+                                placeholder="e.g., 'Frontend Developer Position', 'React Interview', etc."
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                                autoFocus
+                            />
+                        </div>
+
+                        {error && (
+                            <div className="bg-gray-100 border border-gray-300 text-gray-800 px-4 py-3 rounded-xl text-sm">
+                                {error}
+                            </div>
+                        )}
+
+                        <div className="flex items-center justify-between">
+                            <button
+                                onClick={submitInterviewName}
+                                className="bg-gray-900 hover:bg-gray-800 text-white px-6 py-3 rounded-xl font-semibold transition-colors"
+                            >
+                                Continue
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     if (collectingInfo) {
         return (
