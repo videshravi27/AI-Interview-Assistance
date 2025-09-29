@@ -1282,24 +1282,76 @@ const getPersonalizedFallbackQuestions = (
     );
   }
 
-  // Smart selection for better difficulty distribution
+  // Smart selection for better difficulty distribution - GUARANTEE 2 of each
   let finalQuestions = [];
 
-  // Try to get 2 questions from each difficulty level
-  const easyQuestions = questions.filter((q) => q.difficulty === "Easy");
-  const mediumQuestions = questions.filter((q) => q.difficulty === "Medium");
-  const hardQuestions = questions.filter((q) => q.difficulty === "Hard");
+  // Get all questions by difficulty level
+  const easyQuestions = availableQuestions.filter(
+    (q) => q.difficulty === "Easy"
+  );
+  const mediumQuestions = availableQuestions.filter(
+    (q) => q.difficulty === "Medium"
+  );
+  const hardQuestions = availableQuestions.filter(
+    (q) => q.difficulty === "Hard"
+  );
 
-  // Select 2 from each difficulty if available, otherwise fill proportionally
-  finalQuestions.push(...easyQuestions.slice(0, 2));
-  finalQuestions.push(...mediumQuestions.slice(0, 2));
-  finalQuestions.push(...hardQuestions.slice(0, 2));
+  // Shuffle each difficulty group to ensure randomness
+  const shuffledEasy = easyQuestions.sort(() => Math.random() - 0.5);
+  const shuffledMedium = mediumQuestions.sort(() => Math.random() - 0.5);
+  const shuffledHard = hardQuestions.sort(() => Math.random() - 0.5);
 
-  // If we don't have enough questions, fill with remaining
+  // Always try to get exactly 2 from each difficulty
+  finalQuestions.push(...shuffledEasy.slice(0, 2));
+  finalQuestions.push(...shuffledMedium.slice(0, 2));
+  finalQuestions.push(...shuffledHard.slice(0, 2));
+
+  // If we don't have enough questions from any difficulty, fill with what we have
   if (finalQuestions.length < 6) {
-    const remaining = questions.filter((q) => !finalQuestions.includes(q));
-    finalQuestions.push(...remaining.slice(0, 6 - finalQuestions.length));
+    // Get remaining questions from all pools
+    const allRemaining = [
+      ...shuffledEasy.slice(2),
+      ...shuffledMedium.slice(2),
+      ...shuffledHard.slice(2),
+    ];
+    const remainingNeeded = 6 - finalQuestions.length;
+    finalQuestions.push(...allRemaining.slice(0, remainingNeeded));
   }
+
+  // If still not enough, use general fallback questions
+  if (finalQuestions.length < 6) {
+    const fallbackQuestions = getRandomizedFallbackQuestions(randomSeed);
+    const fallbackEasy = fallbackQuestions.filter(
+      (q) => q.difficulty === "Easy"
+    );
+    const fallbackMedium = fallbackQuestions.filter(
+      (q) => q.difficulty === "Medium"
+    );
+    const fallbackHard = fallbackQuestions.filter(
+      (q) => q.difficulty === "Hard"
+    );
+
+    // Fill missing slots proportionally
+    const currentEasy = finalQuestions.filter(
+      (q) => q.difficulty === "Easy"
+    ).length;
+    const currentMedium = finalQuestions.filter(
+      (q) => q.difficulty === "Medium"
+    ).length;
+    const currentHard = finalQuestions.filter(
+      (q) => q.difficulty === "Hard"
+    ).length;
+
+    if (currentEasy < 2)
+      finalQuestions.push(...fallbackEasy.slice(0, 2 - currentEasy));
+    if (currentMedium < 2)
+      finalQuestions.push(...fallbackMedium.slice(0, 2 - currentMedium));
+    if (currentHard < 2)
+      finalQuestions.push(...fallbackHard.slice(0, 2 - currentHard));
+  }
+
+  // Final shuffle to randomize question order while keeping the 2-2-2 distribution
+  finalQuestions = finalQuestions.slice(0, 6).sort(() => Math.random() - 0.5);
 
   // Ensure exactly 6 questions and assign proper properties
   finalQuestions = finalQuestions.slice(0, 6).map((q, index) => {
